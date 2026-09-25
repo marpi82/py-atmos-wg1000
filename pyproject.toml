@@ -1,0 +1,118 @@
+[build-system]
+requires = ["hatchling>=1.27.0", "hatch-vcs>=0.4.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "py-atmos"
+description = "Async client for the ATMOS WG1000 local WebSocket protocol"
+readme = "README.rst"
+authors = [{ name = "MarPi82", email = "marpi82.dev@google.com" }]
+maintainers = [{ name = "MarPi82", email = "marpi82.dev@google.com" }]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13.2,<3.15"
+keywords = ["home-assistant", "atmos", "wg1000", "websocket", "heating"]
+dependencies = [
+  "pydantic>=2.10.4,<3.0.0",
+  "websockets>=14.0,<16.0",
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Developers",
+  "Topic :: Home Automation",
+  "Typing :: Typed",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/marpi82/py-atmos"
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pyatmos"]
+include = ["src/pyatmos/py.typed"]
+
+[dependency-groups]
+dev = [
+  "poethepoet>=0.48.0,<0.49.0",
+  "ruff>=0.16.2,<0.17.0",
+  "mypy[dmypy]>=2.3.0,<2.4.0",
+  "bandit>=1.8.4,<2.0.0",
+  "hatch>=1.12.0,<2.0.0",
+  "hatch-vcs>=0.4.0",
+]
+test = [
+  "pytest>=8.3.3,<10.0.0",
+  "pytest-asyncio>=1.2.0,<2.0.0",
+  "pytest-cov>=7.0.0,<8.0.0",
+]
+docs = [
+  "sphinx>=8.0.2,<10.0.0",
+  "furo>=2025.9.25,<2026.0.0",
+  "sphinx-autodoc-typehints>=3.2.0,<4.0.0",
+  "sphinx-copybutton>=0.5.2,<0.6.0",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 130
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "D", "UP", "RUF", "SIM", "B", "S"]
+fixable = ["ALL"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+"examples/**" = ["S105", "S106", "T201"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.13"
+files = ["src/pyatmos", "tests"]
+strict = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+markers = [
+  "needs_gateway: talks to a WG1000 on the LAN; skipped unless PYATMOS_URL is set",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/pyatmos"]
+
+[tool.poe.tasks]
+fmt = "ruff format"
+lint = "ruff check . --fix"
+fix = ["lint", "fmt"]
+typecheck = "mypy"
+test = { cmd = "pytest -q" }
+cov = { cmd = "pytest -q --cov=pyatmos --cov-report=term-missing" }
+docs-build = { shell = "uv run --group docs sphinx-build -W -b html docs docs/_build/html" }
+validate = ["fmt", "lint", "typecheck", "test"]
