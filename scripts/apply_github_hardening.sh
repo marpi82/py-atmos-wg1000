@@ -55,6 +55,13 @@ create_or_replace_ruleset() {
   local body="$2"
   local existing_id
   existing_id="$(gh api "${API}/rulesets" --jq ".[] | select(.name==\"${name}\") | .id" | head -n1 || true)"
+  # Solo-maintainer Admin role can always bypass (create tags, land first PRs).
+  body="$(python3 -c '
+import json,sys
+r=json.loads(sys.argv[1])
+r["bypass_actors"]=[{"actor_id":5,"actor_type":"RepositoryRole","bypass_mode":"always"}]
+print(json.dumps(r))
+' "${body}")"
   if [[ -n "${existing_id}" ]]; then
     echo "Updating ruleset ${name} (${existing_id})..."
     gh api -X PUT "${API}/rulesets/${existing_id}" --input - <<<"${body}"
