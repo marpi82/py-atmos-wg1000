@@ -1,0 +1,36 @@
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - README.rst
+          - CHANGELOG.md
+          - CONTRIBUTING.md
+          - SECURITY.md
+          - AGENTS.md
+          - GOVERNANCE.md
+          - CODE_OF_CONDUCT.md
+          - .github/*.md
+          - .github/ISSUE_TEMPLATE/**
+          - .github/PULL_REQUEST_TEMPLATE.md
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**
+
+testing:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tests/**
+
+python:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/**
+          - scripts/**
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - pyproject.toml
+          - uv.lock

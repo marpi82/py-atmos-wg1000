@@ -1,0 +1,18 @@
+title = "py-atmos gitleaks configuration"
+
+[allowlist]
+description = "Global allowlist for false positives"
+paths = [
+  '''^docs/_build/''',
+  '''^dist/''',
+  '''^build/''',
+  '''^tests/fixtures/''',
+]
+
+regexes = [
+  '''(?i)example''',
+  '''(?i)dummy''',
+  '''(?i)sample''',
+  '''(?i)placeholder''',
+  '''(?i)changeme'''
+]

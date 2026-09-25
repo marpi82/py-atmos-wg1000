@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "20*"
+      - "v20*"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect tag and pre-release
+        id: meta
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" =~ (a|b|rc)[0-9]+$ ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enforce release channel
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          PRERELEASE: ${{ steps.meta.outputs.prerelease }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin \
+            "+refs/heads/main:refs/remotes/origin/main" \
+            "+refs/heads/release/*:refs/remotes/origin/release/*"
+
+          on_main=false
+          on_release=false
+          if git merge-base --is-ancestor HEAD origin/main; then
+            on_main=true
+          fi
+          while IFS= read -r ref; do
+            if git merge-base --is-ancestor HEAD "$ref"; then
+              on_release=true
+              break
+            fi
+          done < <(git for-each-ref --format="%(refname)" "refs/remotes/origin/release")
+
+          if [[ "$PRERELEASE" == "true" ]]; then
+            if [[ "$on_main" == "true" || "$on_release" == "true" ]]; then
+              echo "Pre-release tag ${TAG}: commit is on main or release/*"
+              exit 0
+            fi
+            echo "::error::Pre-release tag ${TAG} is not on origin/main or origin/release/*."
+            exit 1
+          fi
+
+          if [[ "$on_main" == "true" ]]; then
+            echo "Stable tag ${TAG}: commit is on origin/main"
+            exit 0
+          fi
+          echo "::error::Stable tag ${TAG} is not on origin/main."
+          exit 1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: "latest"
+          enable-cache: true
+          prune-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --group dev --no-install-project
+
+      - name: Build artifacts
+        run: uv build --no-build-isolation
+
+      - name: Verify build artifacts
+        run: |
+          ls -lh dist/
+          uv tool run twine check dist/*
+
+      - name: Generate SHA256 checksums
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cd dist
+          sha256sum *.whl *.tar.gz > ../release-assets/SHA256SUMS
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          path: ./
+          format: cyclonedx-json
+          output-file: release-assets/sbom.cyclonedx.json
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*.whl
+
+      - name: Attest sdist provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*.tar.gz
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dist
+          path: |
+            dist/*
+            release-assets/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            release-assets/SHA256SUMS
+            release-assets/sbom.cyclonedx.json
