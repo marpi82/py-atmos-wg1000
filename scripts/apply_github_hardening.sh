@@ -7,6 +7,8 @@ OWNER="${OWNER:-marpi82}"
 REPO="${REPO:-py-atmos-wg1000}"
 API="repos/${OWNER}/${REPO}"
 
+# Repository Admin role (actor_id 5) may always bypass rulesets (solo-maintainer).
+
 need_auth() {
   if ! gh api user --jq .login >/dev/null 2>&1; then
     echo "gh is not authenticated. Run: gh auth login -h github.com" >&2
@@ -35,11 +37,10 @@ EOF
 
 enable_security() {
   echo "Enabling vulnerability alerts and automated security fixes..."
-  gh api -X PUT "${API}/vulnerability-alerts" --silent || true
-  gh api -X PUT "${API}/automated-security-fixes" --silent || true
-  # Secret scanning / push protection (available on public repos).
-  gh api -X PUT "${API}/secret-scanning/alerts" --silent 2>/dev/null || true
-  gh api -X PATCH "${API}" --input - <<'EOF' || true
+  gh api -X PUT "${API}/vulnerability-alerts" --silent
+  gh api -X PUT "${API}/automated-security-fixes" --silent
+  echo "Enabling secret scanning and push protection..."
+  gh api -X PATCH "${API}" --input - <<'EOF'
 {
   "security_and_analysis": {
     "secret_scanning": { "status": "enabled" },
@@ -52,35 +53,46 @@ EOF
 
 enable_pages() {
   echo "Ensuring GitHub Pages is enabled (Actions source)..."
+  local payload='{"build_type":"workflow","source":{"branch":"main","path":"/"}}'
   if gh api "${API}/pages" >/dev/null 2>&1; then
-    gh api -X PUT "${API}/pages" --input - <<'EOF' || true
-{
-  "build_type": "workflow",
-  "source": { "branch": "main", "path": "/" }
-}
-EOF
+    gh api -X PUT "${API}/pages" --input - <<<"${payload}"
   else
-    gh api -X POST "${API}/pages" --input - <<'EOF' || true
-{
-  "build_type": "workflow",
-  "source": { "branch": "main", "path": "/" }
-}
-EOF
+    gh api -X POST "${API}/pages" --input - <<<"${payload}"
   fi
+}
+
+merge_admin_bypass() {
+  # stdin: ruleset JSON body; $1: existing bypass_actors JSON array
+  python3 -c '
+import json, sys
+
+admin = {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
+body = json.loads(sys.stdin.read())
+existing = json.loads(sys.argv[1]) if len(sys.argv) > 1 else []
+
+merged = []
+seen = set()
+for actor in list(existing) + list(body.get("bypass_actors") or []) + [admin]:
+    key = (actor.get("actor_id"), actor.get("actor_type"), actor.get("bypass_mode"))
+    if key in seen:
+        continue
+    seen.add(key)
+    merged.append(actor)
+body["bypass_actors"] = merged
+print(json.dumps(body))
+' "${1:-[]}"
 }
 
 create_or_replace_ruleset() {
   local name="$1"
   local body="$2"
-  local existing_id
+  local existing_id existing_bypass
   existing_id="$(gh api "${API}/rulesets" --jq ".[] | select(.name==\"${name}\") | .id" | head -n1 || true)"
-  # Solo-maintainer Admin role can always bypass (create tags, land first PRs).
-  body="$(python3 -c '
-import json,sys
-r=json.loads(sys.argv[1])
-r["bypass_actors"]=[{"actor_id":5,"actor_type":"RepositoryRole","bypass_mode":"always"}]
-print(json.dumps(r))
-' "${body}")"
+  existing_bypass='[]'
+  if [[ -n "${existing_id}" ]]; then
+    existing_bypass="$(gh api "${API}/rulesets/${existing_id}" --jq '.bypass_actors // []')"
+  fi
+  body="$(printf '%s' "${body}" | merge_admin_bypass "${existing_bypass}")"
   if [[ -n "${existing_id}" ]]; then
     echo "Updating ruleset ${name} (${existing_id})..."
     gh api -X PUT "${API}/rulesets/${existing_id}" --input - <<<"${body}"
@@ -121,6 +133,7 @@ ruleset_main() {
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           {"context": "secrets (gitleaks)"},
+          {"context": "security (pip-audit)"},
           {"context": "quality (lint + typecheck)"},
           {"context": "tests (3.13)"},
           {"context": "docs-verify"},
@@ -167,7 +180,8 @@ EOF
 }
 
 ruleset_tags() {
-  # CalVer patterns for YYYY.M / YYYY.M.N and aN/bN/rcN pre-releases.
+  # GitHub ruleset ref patterns are fnmatch (not regex). Cover CalVer tags
+  # starting with 20xx, with or without a leading ``v`` (workflows accept both).
   cat <<'EOF'
 {
   "name": "protect-tags",
@@ -176,11 +190,8 @@ ruleset_tags() {
   "conditions": {
     "ref_name": {
       "include": [
-        "refs/tags/20[0-9][0-9].[0-1]?[0-9]",
-        "refs/tags/20[0-9][0-9].[0-1]?[0-9].[0-3]?[0-9]",
-        "refs/tags/20[0-9][0-9](a|b|rc)[0-9]+",
-        "refs/tags/20[0-9][0-9].[0-1]?[0-9](a|b|rc)[0-9]+",
-        "refs/tags/20[0-9][0-9].[0-1]?[0-9].[0-3]?[0-9](a|b|rc)[0-9]+"
+        "refs/tags/20*",
+        "refs/tags/v20*"
       ],
       "exclude": []
     }
