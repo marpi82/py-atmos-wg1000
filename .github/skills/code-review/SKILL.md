@@ -28,7 +28,7 @@ Review procedure for pull requests to this library. Work through every section; 
 
 ## 4. Public API & versioning
 
-- [ ] `pyatmos.__all__` unchanged, or the breaking change is explicit in the PR.
+- [ ] `pyatmos_wg1000.__all__` unchanged, or the breaking change is explicit in the PR.
 - [ ] No version string edited in `pyproject.toml` (hatch-vcs/CalVer from git tags).
 - [ ] New dependencies justified and added via uv.
 

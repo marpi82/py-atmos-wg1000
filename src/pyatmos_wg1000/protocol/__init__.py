@@ -1,9 +1,9 @@
 """Binary protocol for the ATMOS WG1000 local WebSocket."""
 
-from pyatmos.protocol.catalog import Device, Hod16, Id33, ParamKind, hod16_id, hod33_id, pack_register_id
-from pyatmos.protocol.enums import Channel, CommandCode, FileOp, LoginAction, LoginRole, ParamAccess, ParamType
-from pyatmos.protocol.files import FileChunk, decode_file_chunk, encode_file_ack, encode_file_request
-from pyatmos.protocol.frame import (
+from pyatmos_wg1000.protocol.catalog import Device, Hod16, Id33, ParamKind, hod16_id, hod33_id, pack_register_id
+from pyatmos_wg1000.protocol.enums import Channel, CommandCode, FileOp, LoginAction, LoginRole, ParamAccess, ParamType
+from pyatmos_wg1000.protocol.files import FileChunk, decode_file_chunk, encode_file_ack, encode_file_request
+from pyatmos_wg1000.protocol.frame import (
     Command,
     Frame,
     decode_client_frame,
@@ -11,8 +11,8 @@ from pyatmos.protocol.frame import (
     encode_client_frame,
     encode_server_frame,
 )
-from pyatmos.protocol.login import LoginResult, encode_login, parse_login_result
-from pyatmos.protocol.params import (
+from pyatmos_wg1000.protocol.login import LoginResult, encode_login, parse_login_result
+from pyatmos_wg1000.protocol.params import (
     AcdDate,
     AcdTime,
     ParamRecord,

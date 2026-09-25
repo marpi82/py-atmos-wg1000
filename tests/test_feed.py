@@ -5,9 +5,9 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Sequence
 
-from pyatmos.feed import AtmosFeed
-from pyatmos.protocol.enums import Channel, ParamType
-from pyatmos.protocol.params import ParamRecord
+from pyatmos_wg1000.feed import AtmosFeed
+from pyatmos_wg1000.protocol.enums import Channel, ParamType
+from pyatmos_wg1000.protocol.params import ParamRecord
 
 
 class _Reader:

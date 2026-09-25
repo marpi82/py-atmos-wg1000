@@ -13,12 +13,12 @@ from typing import Protocol, Self
 
 from websockets.asyncio.client import connect
 
-from pyatmos.errors import NotConnectedError, ProtocolError
-from pyatmos.protocol.enums import Channel, CommandCode, LoginAction
-from pyatmos.protocol.files import decode_file_chunk, encode_file_ack, encode_file_request
-from pyatmos.protocol.frame import SESSION_ID_LENGTH, Command, Frame, decode_server_frame, encode_client_frame
-from pyatmos.protocol.login import LoginResult, encode_login, parse_login_result
-from pyatmos.protocol.params import ParamRecord, decode_param_read, encode_param_read
+from pyatmos_wg1000.errors import NotConnectedError, ProtocolError
+from pyatmos_wg1000.protocol.enums import Channel, CommandCode, LoginAction
+from pyatmos_wg1000.protocol.files import decode_file_chunk, encode_file_ack, encode_file_request
+from pyatmos_wg1000.protocol.frame import SESSION_ID_LENGTH, Command, Frame, decode_server_frame, encode_client_frame
+from pyatmos_wg1000.protocol.login import LoginResult, encode_login, parse_login_result
+from pyatmos_wg1000.protocol.params import ParamRecord, decode_param_read, encode_param_read
 
 logger = logging.getLogger(__name__)
 

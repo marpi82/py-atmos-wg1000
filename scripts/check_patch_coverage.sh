@@ -6,7 +6,7 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "${repo_root}"
 
 uv run --group test pytest --maxfail=1 --disable-warnings -q \
-  --cov=pyatmos \
+  --cov=pyatmos_wg1000 \
   --cov-branch \
   --cov-report=term-missing \
   --cov-report=xml \

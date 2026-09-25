@@ -8,8 +8,8 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from pyatmos.errors import ProtocolError
-from pyatmos.protocol.enums import ParamAccess, ParamType
+from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.protocol.enums import ParamAccess, ParamType
 
 _U32 = 0xFFFFFFFF
 _MAX_WRITE = 100

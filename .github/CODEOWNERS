@@ -3,6 +3,6 @@
 
 # Critical paths
 /.github/                 @marpi82
-/src/pyatmos/             @marpi82
+/src/pyatmos_wg1000/      @marpi82
 /SECURITY.md              @marpi82
 /pyproject.toml           @marpi82

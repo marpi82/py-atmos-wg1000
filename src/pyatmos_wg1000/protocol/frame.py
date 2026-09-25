@@ -1,7 +1,7 @@
 """WG1000 WebSocket frame codec.
 
 Client frames carry a 32-byte session id. Server frames do not.
-Both end with the CRC from :mod:`pyatmos.protocol.crc`.
+Both end with the CRC from :mod:`pyatmos_wg1000.protocol.crc`.
 """
 
 from __future__ import annotations
@@ -11,8 +11,8 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from pyatmos.errors import ProtocolError
-from pyatmos.protocol.crc import frame_crc, frame_crc_ok
+from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.protocol.crc import frame_crc, frame_crc_ok
 
 PROTOCOL_VERSION = 1
 SESSION_ID_LENGTH = 32

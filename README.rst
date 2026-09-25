@@ -6,7 +6,7 @@ It is the data layer for a future Home Assistant integration: a heavy catalog at
 configuration time, and a light value feed at runtime.
 
 **PyPI name:** ``py-atmos-wg1000`` (``py-atmos`` / ``pyatmos`` were already taken).
-Import as ``import pyatmos``.
+Import as ``import pyatmos_wg1000``.
 
 **Status:** early. The frame codec, language tables, and register poller are in
 place. Writes to the boiler are encoded but have not been sent to a live gateway.
@@ -24,12 +24,12 @@ Two paths
 Configuration (heavy)
    Download ``Lang.json`` and ``texty_brana.json``, pick a language by column
    code (``POL``) or by the gateway index in ``USER1_LANG``, and resolve labels.
-   This is :class:`pyatmos.i18n.LanguageCatalog`. Drop it after the entities exist.
+   This is :class:`pyatmos_wg1000.i18n.LanguageCatalog`. Drop it after the entities exist.
 
 Runtime (light)
    Keep one WebSocket, log in, and poll a fixed set of register ids.
-   :class:`pyatmos.feed.AtmosFeed` stores raw words and publishes
-   :class:`pyatmos.feed.RegisterUpdate` only when a word changes. It does not
+   :class:`pyatmos_wg1000.feed.AtmosFeed` stores raw words and publishes
+   :class:`pyatmos_wg1000.feed.RegisterUpdate` only when a word changes. It does not
    load the language files.
 
 The gateway does not push temperatures. The socket stays open and the feed asks

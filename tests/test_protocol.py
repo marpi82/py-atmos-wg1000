@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import hashlib
 
-from pyatmos.errors import ProtocolError
-from pyatmos.protocol.catalog import Device, Hod16, Id33, hod16_id
-from pyatmos.protocol.enums import Channel, CommandCode, FileOp, ParamAccess, ParamType
-from pyatmos.protocol.files import decode_file_chunk, encode_file_ack, encode_file_request
-from pyatmos.protocol.frame import decode_client_frame, decode_server_frame, encode_client_frame, encode_server_frame
-from pyatmos.protocol.login import encode_login, parse_login_result
-from pyatmos.protocol.params import (
+from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.protocol.catalog import Device, Hod16, Id33, hod16_id
+from pyatmos_wg1000.protocol.enums import Channel, CommandCode, FileOp, ParamAccess, ParamType
+from pyatmos_wg1000.protocol.files import decode_file_chunk, encode_file_ack, encode_file_request
+from pyatmos_wg1000.protocol.frame import decode_client_frame, decode_server_frame, encode_client_frame, encode_server_frame
+from pyatmos_wg1000.protocol.login import encode_login, parse_login_result
+from pyatmos_wg1000.protocol.params import (
     decode_acd_date,
     decode_acd_temperature,
     decode_acd_time,

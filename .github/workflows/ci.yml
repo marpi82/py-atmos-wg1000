@@ -133,7 +133,7 @@ jobs:
         run: uv sync --locked --group test
 
       - name: Run pytest
-        run: uv run pytest -q --maxfail=1 --disable-warnings --cov=pyatmos --cov-report=xml --cov-report=term-missing
+        run: uv run pytest -q --maxfail=1 --disable-warnings --cov=pyatmos_wg1000 --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage reports to Codecov (pull request)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false }}
