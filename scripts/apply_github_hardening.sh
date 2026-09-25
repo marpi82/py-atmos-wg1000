@@ -50,6 +50,25 @@ enable_security() {
 EOF
 }
 
+enable_pages() {
+  echo "Ensuring GitHub Pages is enabled (Actions source)..."
+  if gh api "${API}/pages" >/dev/null 2>&1; then
+    gh api -X PUT "${API}/pages" --input - <<'EOF' || true
+{
+  "build_type": "workflow",
+  "source": { "branch": "main", "path": "/" }
+}
+EOF
+  else
+    gh api -X POST "${API}/pages" --input - <<'EOF' || true
+{
+  "build_type": "workflow",
+  "source": { "branch": "main", "path": "/" }
+}
+EOF
+  fi
+}
+
 create_or_replace_ruleset() {
   local name="$1"
   local body="$2"
@@ -72,7 +91,6 @@ print(json.dumps(r))
 }
 
 ruleset_main() {
-  # No required status checks yet — add them when CI workflows exist.
   cat <<'EOF'
 {
   "name": "protect-main",
@@ -94,6 +112,20 @@ ruleset_main() {
         "require_last_push_approval": false,
         "required_review_thread_resolution": true,
         "allowed_merge_methods": ["merge", "squash", "rebase"]
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {"context": "secrets (gitleaks)"},
+          {"context": "quality (lint + typecheck)"},
+          {"context": "tests (3.13)"},
+          {"context": "docs-verify"},
+          {"context": "build"}
+        ]
       }
     },
     { "type": "non_fast_forward" },
@@ -166,6 +198,7 @@ main() {
   need_auth
   patch_repo
   enable_security
+  enable_pages
   create_or_replace_ruleset "protect-main" "$(ruleset_main)"
   create_or_replace_ruleset "protect-release/**" "$(ruleset_release)"
   create_or_replace_ruleset "protect-tags" "$(ruleset_tags)"

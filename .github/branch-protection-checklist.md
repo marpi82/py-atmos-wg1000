@@ -18,7 +18,7 @@ Apply or refresh via `scripts/apply_github_hardening.sh`. UI: https://github.com
 4. Require conversation resolution before merging
 5. Do **not** allow force pushes
 6. Do **not** allow deletions
-7. Optionally require status checks once CI is stable (`secrets`, `quality`, `tests`, `docs-verify`, `build`)
+7. Require status checks: `secrets (gitleaks)`, `quality (lint + typecheck)`, `tests (3.13)`, `docs-verify`, `build`
 8. Repository Admin may bypass (solo-maintainer)
 
 ## Branch ruleset: `release/**`
