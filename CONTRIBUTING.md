@@ -21,7 +21,7 @@ Do **not** file security issues publicly — see [SECURITY.md](SECURITY.md).
 
 ```bash
 uv sync --locked --group dev --group test --python 3.13
-uv run pre-commit install
+uv run pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
 Useful commands:
