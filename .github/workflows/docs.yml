@@ -1,0 +1,210 @@
+name: Docs
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ["20*", "v20*"]
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { fetch-depth: 0 }
+
+      - name: Detect version and publish targets
+        id: version
+        env:
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          STABLE_RE='^[0-9]{4}\.[0-9]+\.[0-9]+$'
+          LATEST_STABLE="$(
+            git tag -l '20*' 'v20*' \
+              | sed 's/^v//' \
+              | grep -E "${STABLE_RE}" \
+              | sort -V \
+              | tail -1 || true
+          )"
+          echo "latest_stable=${LATEST_STABLE}" >> "$GITHUB_OUTPUT"
+
+          if [[ "$REF" == refs/tags/* ]]; then
+            VERSION="${REF_NAME#v}"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            if [[ "$VERSION" =~ ${STABLE_RE} ]]; then
+              echo "deploy=true" >> "$GITHUB_OUTPUT"
+              echo "is_stable=true" >> "$GITHUB_OUTPUT"
+              if [[ -n "$LATEST_STABLE" && "$VERSION" == "$LATEST_STABLE" ]]; then
+                echo "promote_latest=true" >> "$GITHUB_OUTPUT"
+              else
+                echo "promote_latest=false" >> "$GITHUB_OUTPUT"
+              fi
+            else
+              echo "deploy=false" >> "$GITHUB_OUTPUT"
+              echo "is_stable=false" >> "$GITHUB_OUTPUT"
+              echo "promote_latest=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            echo "is_stable=false" >> "$GITHUB_OUTPUT"
+            echo "promote_latest=false" >> "$GITHUB_OUTPUT"
+            echo "version=dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        if: steps.version.outputs.deploy == 'true'
+        with:
+          version: "latest"
+          enable-cache: true
+          prune-cache: true
+
+      - name: Set up Python
+        if: steps.version.outputs.deploy == 'true'
+        run: uv python install 3.13.2
+
+      - name: Install dependencies
+        if: steps.version.outputs.deploy == 'true'
+        run: uv sync --locked --group docs
+
+      - name: Build Sphinx docs (current checkout)
+        if: steps.version.outputs.deploy == 'true'
+        env:
+          LC_ALL: C.UTF-8
+          LANG: C.UTF-8
+          DOCS_VERSION: ${{ steps.version.outputs.version }}
+        run: uv run sphinx-build -W --keep-going -b html docs docs/_build/html-current
+
+      - name: Build Sphinx docs (/dev/ surface)
+        if: steps.version.outputs.deploy == 'true'
+        id: build_dev
+        continue-on-error: true
+        env:
+          LC_ALL: C.UTF-8
+          LANG: C.UTF-8
+          IS_STABLE: ${{ steps.version.outputs.is_stable }}
+        run: |
+          set -euo pipefail
+          rm -rf docs/_build/html-dev
+          if [[ "$IS_STABLE" != "true" ]]; then
+            cp -a docs/_build/html-current docs/_build/html-dev
+            exit 0
+          fi
+          WORKTREE="/tmp/pyatmos-docs-main"
+          git fetch origin refs/heads/main:refs/remotes/origin/main
+          git worktree add --detach "$WORKTREE" origin/main
+          (
+            cd "$WORKTREE"
+            uv sync --locked --group docs
+            DOCS_VERSION=dev uv run sphinx-build -W --keep-going -b html docs docs/_build/html
+          )
+          cp -a "$WORKTREE/docs/_build/html" docs/_build/html-dev
+
+      - name: Build Sphinx docs (/latest/ from last stable tag)
+        if: steps.version.outputs.deploy == 'true'
+        env:
+          LC_ALL: C.UTF-8
+          LANG: C.UTF-8
+          LATEST_STABLE: ${{ steps.version.outputs.latest_stable }}
+          VERSION: ${{ steps.version.outputs.version }}
+          IS_STABLE: ${{ steps.version.outputs.is_stable }}
+          PROMOTE_LATEST: ${{ steps.version.outputs.promote_latest }}
+        run: |
+          set -euo pipefail
+          rm -rf docs/_build/html-latest
+          if [[ -z "${LATEST_STABLE}" ]]; then
+            echo "No stable CalVer tag found — /latest/ will be omitted"
+            exit 0
+          fi
+          if [[ "$IS_STABLE" == "true" && "$PROMOTE_LATEST" == "true" ]]; then
+            cp -a docs/_build/html-current docs/_build/html-latest
+            exit 0
+          fi
+          TAG_REF="${LATEST_STABLE}"
+          if ! git rev-parse --verify "refs/tags/${TAG_REF}" >/dev/null 2>&1; then
+            TAG_REF="v${LATEST_STABLE}"
+          fi
+          WORKTREE="/tmp/pyatmos-docs-stable"
+          git worktree add --detach "$WORKTREE" "refs/tags/${TAG_REF}"
+          (
+            cd "$WORKTREE"
+            uv sync --locked --group docs
+            DOCS_VERSION="${LATEST_STABLE}" uv run sphinx-build -W --keep-going -b html docs docs/_build/html
+          )
+          cp -a "$WORKTREE/docs/_build/html" docs/_build/html-latest
+
+      - name: Prepare versioned site
+        if: steps.version.outputs.deploy == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          IS_STABLE: ${{ steps.version.outputs.is_stable }}
+          LATEST_STABLE: ${{ steps.version.outputs.latest_stable }}
+        run: |
+          set -euo pipefail
+          mkdir -p site
+          if [[ -d docs/_build/html-latest ]]; then
+            cp -a docs/_build/html-latest site/latest
+            if [[ -n "${LATEST_STABLE}" ]]; then
+              cp -a docs/_build/html-latest "site/${LATEST_STABLE}"
+            fi
+          fi
+          if [[ "$IS_STABLE" == "true" ]]; then
+            cp -a docs/_build/html-current "site/${VERSION}"
+          fi
+          if [[ -d docs/_build/html-dev ]]; then
+            cp -a docs/_build/html-dev site/dev
+          fi
+          if [[ -d site/latest ]]; then
+            cat > site/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>Redirect…</title>
+          <meta http-equiv="refresh" content="0; url=latest/">
+          <p>Redirecting to <a href="latest/">latest</a>…
+          See also <a href="versions.html">versions</a>.</p>
+          HTML
+          elif [[ -d site/dev ]]; then
+            cat > site/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>Redirect…</title>
+          <meta http-equiv="refresh" content="0; url=dev/">
+          <p>Redirecting to <a href="dev/">dev</a>…
+          See also <a href="versions.html">versions</a>.</p>
+          HTML
+          else
+            echo "::error::Neither /latest/ nor /dev/ was produced"
+            exit 1
+          fi
+          {
+            echo '<!doctype html><meta charset="utf-8"><title>py-atmos docs versions</title>'
+            echo '<h1>Documentation versions</h1><ul>'
+            if [[ -d site/latest ]]; then
+              echo '  <li><a href="latest/"><strong>latest</strong></a></li>'
+            fi
+            if [[ -d site/dev ]]; then
+              echo '  <li><a href="dev/">dev</a></li>'
+            fi
+            echo '</ul>'
+          } > site/versions.html
+
+      - name: Upload Pages Artifact
+        if: steps.version.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        if: steps.version.outputs.deploy == 'true'
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

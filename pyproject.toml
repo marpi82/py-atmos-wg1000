@@ -46,6 +46,8 @@ dev = [
   "poethepoet>=0.48.0,<0.49.0",
   "ruff>=0.16.2,<0.17.0",
   "mypy[dmypy]>=2.3.0,<2.4.0",
+  "pre-commit>=4.3.0,<5.0.0",
+  "pip-audit>=2.4.0,<3.0.0",
   "bandit>=1.8.4,<2.0.0",
   "hatch>=1.12.0,<2.0.0",
   "hatch-vcs>=0.4.0",
@@ -54,6 +56,7 @@ test = [
   "pytest>=8.3.3,<10.0.0",
   "pytest-asyncio>=1.2.0,<2.0.0",
   "pytest-cov>=7.0.0,<8.0.0",
+  "diff-cover>=10.5.1,<10.6.0",
 ]
 docs = [
   "sphinx>=8.0.2,<10.0.0",
@@ -114,5 +117,8 @@ fix = ["lint", "fmt"]
 typecheck = "mypy"
 test = { cmd = "pytest -q" }
 cov = { cmd = "pytest -q --cov=pyatmos --cov-report=term-missing" }
+bandit = { cmd = "bandit -r src -q -ll" }
+pip-audit = { cmd = "pip-audit --skip-editable --progress-spinner off" }
+security = ["bandit", "pip-audit"]
 docs-build = { shell = "uv run --group docs sphinx-build -W -b html docs docs/_build/html" }
-validate = ["fmt", "lint", "typecheck", "test"]
+validate = ["fmt", "lint", "typecheck", "security", "test"]

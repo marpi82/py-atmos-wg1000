@@ -1,0 +1,24 @@
+coverage:
+  status:
+    patch:
+      default:
+        target: 100%
+        threshold: 0%
+        only_pulls: true
+    project:
+      default:
+        informational: true
+
+ignore:
+  - "tests/**/*"
+  - "scripts/**/*"
+  - "docs/**/*"
+  - "examples/**/*"
+  - ".github/**"
+  - "pyproject.toml"
+  - "uv.lock"
+  - "codecov.yml"
+
+comment:
+  layout: "reach, diff, flags, files"
+  require_changes: true

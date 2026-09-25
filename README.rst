@@ -40,9 +40,10 @@ Development
 -----------
 
 Python 3.13. Version comes from git tags (``hatch-vcs``), with fallback ``0.0.0``
-until the first tag.
+until the first tag. See ``CONTRIBUTING.md``, ``AGENTS.md``, and ``SECURITY.md``.
 
 .. code-block:: bash
 
    uv sync --group dev --group test --locked
-   uv run --group dev poe validate
+   uv run pre-commit install
+   uv run --group dev --group test poe validate
