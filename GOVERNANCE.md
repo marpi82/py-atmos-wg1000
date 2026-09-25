@@ -2,7 +2,7 @@
 
 ## Model
 
-py-atmos is a single-maintainer project: the owner (@marpi82) makes all final decisions on direction, releases, and dispute resolution (benevolent-dictator model). This may evolve if regular co-maintainers join.
+py-atmos-wg1000 is a single-maintainer project: the owner (@marpi82) makes all final decisions on direction, releases, and dispute resolution (benevolent-dictator model). This may evolve if regular co-maintainers join.
 
 ## Roles and responsibilities
 

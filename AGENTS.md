@@ -1,4 +1,4 @@
-# AGENTS.md — py-atmos
+# AGENTS.md — py-atmos-wg1000
 
 Async Python library for the local WebSocket API of an ATMOS WG1000 gateway,
 designed as the data layer for a future Home Assistant integration.

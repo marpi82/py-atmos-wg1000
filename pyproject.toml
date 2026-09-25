@@ -28,7 +28,7 @@ classifiers = [
 dynamic = ["version"]
 
 [project.urls]
-Repository = "https://github.com/marpi82/py-atmos"
+Repository = "https://github.com/marpi82/py-atmos-wg1000"
 
 [tool.hatch.version]
 source = "vcs"

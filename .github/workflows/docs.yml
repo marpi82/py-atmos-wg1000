@@ -188,7 +188,7 @@ jobs:
             exit 1
           fi
           {
-            echo '<!doctype html><meta charset="utf-8"><title>py-atmos docs versions</title>'
+            echo '<!doctype html><meta charset="utf-8"><<title>py-atmos-wg1000 docs versions</title>'
             echo '<h1>Documentation versions</h1><ul>'
             if [[ -d site/latest ]]; then
               echo '  <li><a href="latest/"><strong>latest</strong></a></li>'

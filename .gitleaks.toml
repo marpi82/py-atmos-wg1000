@@ -1,4 +1,4 @@
-title = "py-atmos gitleaks configuration"
+title = "py-atmos-wg1000 gitleaks configuration"
 
 [allowlist]
 description = "Global allowlist for false positives"

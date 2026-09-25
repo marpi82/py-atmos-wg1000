@@ -1,5 +1,5 @@
-py-atmos
-========
+py-atmos-wg1000
+===============
 
 Library for the ATMOS WG1000 local WebSocket. Configuration loads language
 tables. Runtime only polls register values.

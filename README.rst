@@ -1,5 +1,5 @@
-py-atmos
-========
+py-atmos-wg1000
+===============
 
 Async Python library for the local WebSocket API of an **ATMOS WG1000** gateway.
 It is the data layer for a future Home Assistant integration: a heavy catalog at

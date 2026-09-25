@@ -1,5 +1,5 @@
 name: Bug report
-description: Something is broken or behaves unexpectedly in py-atmos.
+description: Something is broken or behaves unexpectedly in py-atmos-wg1000.
 title: "bug: "
 labels: ["bug"]
 body:
@@ -8,7 +8,7 @@ body:
       value: |
         Thanks for reporting a bug.
 
-        **Security issues must not be filed here.** Use [private vulnerability reporting](https://github.com/marpi82/py-atmos/security/advisories/new) or email `marpi82.dev@google.com` (see [SECURITY.md](https://github.com/marpi82/py-atmos/blob/main/SECURITY.md)).
+        **Security issues must not be filed here.** Use [private vulnerability reporting](https://github.com/marpi82/py-atmos-wg1000/security/advisories/new) or email `marpi82.dev@google.com` (see [SECURITY.md](https://github.com/marpi82/py-atmos-wg1000/blob/main/SECURITY.md)).
 
   - type: textarea
     id: summary
@@ -52,7 +52,7 @@ body:
     attributes:
       label: Environment
       value: |
-        - py-atmos version / git SHA:
+        - py-atmos-wg1000 version / git SHA:
         - Python version:
         - Gateway firmware (if known):
         - OS:

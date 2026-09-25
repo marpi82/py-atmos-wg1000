@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a new capability or improvement for py-atmos.
+description: Propose a new capability or improvement for py-atmos-wg1000.
 title: "feat: "
 labels: ["enhancement"]
 body:
