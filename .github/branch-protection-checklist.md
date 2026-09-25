@@ -30,7 +30,7 @@ Apply or refresh via `scripts/apply_github_hardening.sh`. UI: https://github.com
 
 ## Tag ruleset (CalVer)
 
-Patterns use fnmatch (`refs/tags/20*`) for CalVer tags and `aN`/`bN`/`rcN` pre-releases:
+Patterns use fnmatch (`refs/tags/20*` and `refs/tags/v20*`) for CalVer tags and `aN`/`bN`/`rcN` pre-releases:
 
 1. Restrict tag creations
 2. Block tag deletions

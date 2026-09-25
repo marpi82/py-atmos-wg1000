@@ -181,7 +181,7 @@ EOF
 
 ruleset_tags() {
   # GitHub ruleset ref patterns are fnmatch (not regex). Cover CalVer tags
-  # starting with 20xx (stable and aN/bN/rcN pre-releases).
+  # starting with 20xx, with or without a leading ``v`` (workflows accept both).
   cat <<'EOF'
 {
   "name": "protect-tags",
@@ -190,7 +190,8 @@ ruleset_tags() {
   "conditions": {
     "ref_name": {
       "include": [
-        "refs/tags/20*"
+        "refs/tags/20*",
+        "refs/tags/v20*"
       ],
       "exclude": []
     }
