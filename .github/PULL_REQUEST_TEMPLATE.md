@@ -8,7 +8,7 @@
 
 - [ ] Bug fix (non-breaking)
 - [ ] New feature / enhancement (non-breaking)
-- [ ] Breaking change to the **public API** (`AtmosClient`, `AtmosFeed`, `LanguageCatalog`, or other symbols in `pyatmos.__all__`)
+- [ ] Breaking change to the **public API** (`AtmosClient`, `AtmosFeed`, `LanguageCatalog`, or other symbols in `pyatmos_wg1000.__all__`)
 - [ ] Docs only
 - [ ] Tests / CI / tooling / chore
 

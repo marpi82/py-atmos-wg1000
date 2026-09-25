@@ -1,5 +1,5 @@
 ---
-applyTo: "src/pyatmos/protocol/**/*.py, src/pyatmos/i18n.py"
+applyTo: "src/pyatmos_wg1000/protocol/**/*.py, src/pyatmos_wg1000/i18n.py"
 ---
 
 # Protocol and language-catalog rules

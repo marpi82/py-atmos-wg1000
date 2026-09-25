@@ -53,7 +53,7 @@ body:
       multiple: true
       options:
         - WebSocket client (`AtmosClient`)
-        - Protocol codec (`pyatmos.protocol`)
+        - Protocol codec (`pyatmos_wg1000.protocol`)
         - Language catalog (`LanguageCatalog`)
         - Feed / ValueStore / EventBus
         - Docs

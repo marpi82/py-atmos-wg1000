@@ -9,8 +9,8 @@ import hashlib
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from pyatmos.errors import ProtocolError
-from pyatmos.protocol.enums import LoginAction, LoginRole
+from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.protocol.enums import LoginAction, LoginRole
 
 _USER_FIELD = 32
 _PASSWORD_FIELD = 64

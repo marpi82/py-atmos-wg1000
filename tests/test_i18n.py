@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from pyatmos.errors import ProtocolError
-from pyatmos.i18n import LanguageCatalog
+from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.i18n import LanguageCatalog
 
 _COLUMNS = ["ID", "CES", "ENG", "POL"]
 _UI = json.dumps(

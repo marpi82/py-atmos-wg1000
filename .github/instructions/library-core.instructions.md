@@ -1,8 +1,8 @@
 ---
-applyTo: "src/pyatmos/**/*.py"
+applyTo: "src/pyatmos_wg1000/**/*.py"
 ---
 
-# Library core rules (apply to all of src/pyatmos)
+# Library core rules (apply to all of src/pyatmos_wg1000)
 
 When reviewing or changing library code:
 

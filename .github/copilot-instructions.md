@@ -26,10 +26,10 @@ The gateway does **not** push temperatures. Polling is the acquisition model.
 
 ## Key modules
 
-- `src/pyatmos/client.py` — async WebSocket client
-- `src/pyatmos/protocol/` — frames, CRC, login, params, files, register catalog
-- `src/pyatmos/i18n.py` — language tables
-- `src/pyatmos/feed.py` — poller, store, bus
+- `src/pyatmos_wg1000/client.py` — async WebSocket client
+- `src/pyatmos_wg1000/protocol/` — frames, CRC, login, params, files, register catalog
+- `src/pyatmos_wg1000/i18n.py` — language tables
+- `src/pyatmos_wg1000/feed.py` — poller, store, bus
 
 ## Do not
 

@@ -2,7 +2,7 @@
 
 The feed polls the gateway and keeps raw values. It does not load language
 files or the UI bundle. Home Assistant runtime should use this module.
-Build entity names earlier with :class:`pyatmos.i18n.LanguageCatalog`.
+Build entity names earlier with :class:`pyatmos_wg1000.i18n.LanguageCatalog`.
 """
 
 from __future__ import annotations
@@ -15,9 +15,9 @@ from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from typing import Protocol
 
-from pyatmos.errors import ProtocolError
-from pyatmos.protocol.enums import Channel, ParamType
-from pyatmos.protocol.params import ParamRecord
+from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.protocol.enums import Channel, ParamType
+from pyatmos_wg1000.protocol.params import ParamRecord
 
 logger = logging.getLogger(__name__)
 

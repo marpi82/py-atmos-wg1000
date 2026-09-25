@@ -1,7 +1,7 @@
 """Language tables downloaded from the gateway.
 
 This is the heavy, config-time catalog. Runtime acquisition
-(:class:`pyatmos.feed.AtmosFeed`) does not use it.
+(:class:`pyatmos_wg1000.feed.AtmosFeed`) does not use it.
 
 ``Lang.json`` holds UI strings keyed by text id. ``texty_brana.json`` holds
 regulator strings keyed by number. Both tables share the same language
@@ -18,12 +18,12 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from pyatmos.errors import ProtocolError
-from pyatmos.protocol.catalog import Id33
-from pyatmos.protocol.enums import Channel
+from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.protocol.catalog import Id33
+from pyatmos_wg1000.protocol.enums import Channel
 
 if TYPE_CHECKING:
-    from pyatmos.client import AtmosClient
+    from pyatmos_wg1000.client import AtmosClient
 
 _UI_FILE = "Lang.json"
 _REGULATOR_FILE = "texty_brana.json"

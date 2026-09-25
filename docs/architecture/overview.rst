@@ -16,23 +16,23 @@ one before it indexes the row, because column 0 is not a language. Index ``8``
 is therefore column 9. On the table shipped with the gateway that column is
 ``POL``.
 
-:class:`pyatmos.i18n.LanguageCatalog` is the only object that holds those
+:class:`pyatmos_wg1000.i18n.LanguageCatalog` is the only object that holds those
 tables. Build entity names from it, then discard it.
 
 Runtime
 -------
 
-:class:`pyatmos.feed.AtmosFeed` is the acquisition loop:
+:class:`pyatmos_wg1000.feed.AtmosFeed` is the acquisition loop:
 
-1. The caller logs in with :meth:`pyatmos.client.AtmosClient.login`.
+1. The caller logs in with :meth:`pyatmos_wg1000.client.AtmosClient.login`.
 2. The feed reads a fixed list of register ids.
-3. :class:`pyatmos.feed.ValueStore` keeps the raw 32-bit word.
-4. :class:`pyatmos.feed.EventBus` yields a :class:`pyatmos.feed.RegisterUpdate`
+3. :class:`pyatmos_wg1000.feed.ValueStore` keeps the raw 32-bit word.
+4. :class:`pyatmos_wg1000.feed.EventBus` yields a :class:`pyatmos_wg1000.feed.RegisterUpdate`
    when that word changes.
 
 There is no subscription message. A quiet register produces no event after the
 first sample. Temperature scaling stays in
-:func:`pyatmos.protocol.params.decode_acd_temperature` and is applied by the
+:func:`pyatmos_wg1000.protocol.params.decode_acd_temperature` and is applied by the
 integration, not stored a second time.
 
 .. code-block:: python

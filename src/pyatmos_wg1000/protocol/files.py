@@ -6,8 +6,8 @@ import struct
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from pyatmos.errors import ProtocolError
-from pyatmos.protocol.enums import FileOp
+from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.protocol.enums import FileOp
 
 
 class FileChunk(BaseModel):

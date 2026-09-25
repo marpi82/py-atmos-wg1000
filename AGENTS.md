@@ -5,9 +5,9 @@ designed as the data layer for a future Home Assistant integration.
 
 ## Project shape
 
-- **Layout**: src-layout, single package `src/pyatmos/`, tests in `tests/` (flat `test_*.py`).
+- **Layout**: src-layout, single package `src/pyatmos_wg1000/`, tests in `tests/` (flat `test_*.py`).
 - **Python**: `>=3.13.2,<3.15` (CI tests on 3.13).
-- **PyPI distribution**: `py-atmos-wg1000` (import remains `pyatmos`).
+- **PyPI distribution**: `py-atmos-wg1000` (import as `pyatmos_wg1000`).
 - **Dependencies**: **uv** (`uv.lock` committed). Groups: `dev`, `test`, `docs`.
 - **Build**: hatchling + **hatch-vcs** — version is CalVer from git tags; never hardcode a version in `pyproject.toml`.
 - **Releases**: tag push → `.github/workflows/release.yml` (PyPI + GitHub Release). `main` may cut stable or `aN`/`bN`/`rcN`; `release/YYYY.M` trains may cut pre-releases only. Ruleset checklist: `.github/branch-protection-checklist.md`.
@@ -29,7 +29,7 @@ Pre-commit hooks exist; **pre-push** runs pytest with an **80% project** floor p
 
 ## Architecture in one paragraph
 
-One TLS WebSocket (`wss://<host>/api/wss`) carries a binary framing protocol (version, length, optional 32-byte session id, commands, CRC). Configuration loads language tables (`Lang.json`, `texty_brana.json`) via :class:`pyatmos.i18n.LanguageCatalog`. Runtime keeps a light poller (:class:`pyatmos.feed.AtmosFeed`) that asks for fixed register ids and publishes :class:`pyatmos.feed.RegisterUpdate` when a raw word changes. The gateway does not push sensor values on its own. Public surface today: `AtmosClient`, `AtmosFeed`, `LanguageCatalog`, `ValueStore`.
+One TLS WebSocket (`wss://<host>/api/wss`) carries a binary framing protocol (version, length, optional 32-byte session id, commands, CRC). Configuration loads language tables (`Lang.json`, `texty_brana.json`) via :class:`pyatmos_wg1000.i18n.LanguageCatalog`. Runtime keeps a light poller (:class:`pyatmos_wg1000.feed.AtmosFeed`) that asks for fixed register ids and publishes :class:`pyatmos_wg1000.feed.RegisterUpdate` when a raw word changes. The gateway does not push sensor values on its own. Public surface today: `AtmosClient`, `AtmosFeed`, `LanguageCatalog`, `ValueStore`.
 
 ## Non-negotiable conventions
 
@@ -38,7 +38,7 @@ One TLS WebSocket (`wss://<host>/api/wss`) carries a binary framing protocol (ve
 3. **Ruff** (`line-length = 130`, rules `E,F,W,I,D,UP,RUF,SIM,B,S`, Google-style docstrings) must pass; run `poe fix` before committing.
 4. **Async-first**: never block the event loop; `asyncio.to_thread()` for sync work; long-lived tasks must not die silently (`LOG.exception`).
 5. **Pydantic v2** for DTOs (`ConfigDict`, `Field(...)`).
-6. **Public API** is `pyatmos.__all__`. Breaking it affects the future HA integration — call it out in PRs.
+6. **Public API** is `pyatmos_wg1000.__all__`. Breaking it affects the future HA integration — call it out in PRs.
 7. **Logging**: stdlib `logging.getLogger(__name__)`; library root attaches a `NullHandler` — never configure logging in library modules.
 8. **Secrets**: never commit `.env`, gateway passwords, or live dumps of private session material.
 

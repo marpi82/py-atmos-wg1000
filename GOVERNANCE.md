@@ -28,4 +28,4 @@ To keep the project viable if the maintainer becomes unavailable:
 ## Decisions
 
 - Day-to-day: decided in GitHub issues/PR discussions.
-- Breaking changes to the public API (`pyatmos.__all__`) require an explicit maintainer decision recorded in the PR.
+- Breaking changes to the public API (`pyatmos_wg1000.__all__`) require an explicit maintainer decision recorded in the PR.

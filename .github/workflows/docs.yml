@@ -105,7 +105,7 @@ jobs:
             cp -a docs/_build/html-current docs/_build/html-dev
             exit 0
           fi
-          WORKTREE="/tmp/pyatmos-docs-main"
+          WORKTREE="/tmp/pyatmos_wg1000-docs-main"
           git fetch origin refs/heads/main:refs/remotes/origin/main
           git worktree add --detach "$WORKTREE" origin/main
           (
@@ -139,7 +139,7 @@ jobs:
           if ! git rev-parse --verify "refs/tags/${TAG_REF}" >/dev/null 2>&1; then
             TAG_REF="v${LATEST_STABLE}"
           fi
-          WORKTREE="/tmp/pyatmos-docs-stable"
+          WORKTREE="/tmp/pyatmos_wg1000-docs-stable"
           git worktree add --detach "$WORKTREE" "refs/tags/${TAG_REF}"
           (
             cd "$WORKTREE"

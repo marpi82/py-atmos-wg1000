@@ -38,8 +38,8 @@ fallback-version = "0.0.0"
 local_scheme = "no-local-version"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pyatmos"]
-include = ["src/pyatmos/py.typed"]
+packages = ["src/pyatmos_wg1000"]
+include = ["src/pyatmos_wg1000/py.typed"]
 
 [dependency-groups]
 dev = [
@@ -88,7 +88,7 @@ line-ending = "lf"
 
 [tool.mypy]
 python_version = "3.13"
-files = ["src/pyatmos", "tests"]
+files = ["src/pyatmos_wg1000", "tests"]
 strict = true
 warn_return_any = true
 warn_unreachable = true
@@ -108,7 +108,7 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = ["src/pyatmos"]
+source = ["src/pyatmos_wg1000"]
 
 [tool.poe.tasks]
 fmt = "ruff format"
@@ -116,7 +116,7 @@ lint = "ruff check . --fix"
 fix = ["lint", "fmt"]
 typecheck = "mypy"
 test = { cmd = "pytest -q" }
-cov = { cmd = "pytest -q --cov=pyatmos --cov-report=term-missing" }
+cov = { cmd = "pytest -q --cov=pyatmos_wg1000 --cov-report=term-missing" }
 bandit = { cmd = "bandit -r src -q -ll" }
 pip-audit = { cmd = "pip-audit --skip-editable --progress-spinner off" }
 security = ["bandit", "pip-audit"]

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from enum import IntEnum
 
-from pyatmos.errors import ProtocolError
+from pyatmos_wg1000.errors import ProtocolError
 
 _LOCAL_ID_MASK = 0xFFFFFF
 
