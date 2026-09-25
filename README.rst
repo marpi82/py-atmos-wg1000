@@ -5,8 +5,18 @@ Async Python library for the local WebSocket API of an **ATMOS WG1000** gateway.
 It is the data layer for a future Home Assistant integration: a heavy catalog at
 configuration time, and a light value feed at runtime.
 
+**PyPI name:** ``py-atmos-wg1000`` (``py-atmos`` / ``pyatmos`` were already taken).
+Import as ``import pyatmos``.
+
 **Status:** early. The frame codec, language tables, and register poller are in
 place. Writes to the boiler are encoded but have not been sent to a live gateway.
+
+Install
+-------
+
+.. code-block:: bash
+
+   pip install py-atmos-wg1000
 
 Two paths
 ---------

@@ -1230,7 +1230,7 @@ wheels = [
 ]
 
 [[package]]
-name = "py-atmos"
+name = "py-atmos-wg1000"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },

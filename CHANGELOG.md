@@ -7,6 +7,10 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+### Changed
+
+- PyPI distribution name is `py-atmos-wg1000` (normalized name collision with existing `pyatmos`).
+
 ### Added
 
 - Binary WebSocket frame codec, login, parameter read/write payloads, and ACD value decoding.
