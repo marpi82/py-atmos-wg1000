@@ -2,9 +2,8 @@ py-atmos
 ========
 
 Async Python library for the local WebSocket API of an **ATMOS WG1000** gateway.
-It is the data layer for a future Home Assistant integration, split the same way
-as ``py-bragerone``: a heavy catalog at configuration time, and a light value
-feed at runtime.
+It is the data layer for a future Home Assistant integration: a heavy catalog at
+configuration time, and a light value feed at runtime.
 
 **Status:** early. The frame codec, language tables, and register poller are in
 place. Writes to the boiler are encoded but have not been sent to a live gateway.
