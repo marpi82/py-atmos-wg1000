@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27.0", "hatch-vcs>=0.4.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "py-atmos"
+name = "py-atmos-wg1000"
 description = "Async client for the ATMOS WG1000 local WebSocket protocol"
 readme = "README.rst"
 authors = [{ name = "MarPi82", email = "marpi82.dev@google.com" }]

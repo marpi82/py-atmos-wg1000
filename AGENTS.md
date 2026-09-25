@@ -7,6 +7,7 @@ designed as the data layer for a future Home Assistant integration.
 
 - **Layout**: src-layout, single package `src/pyatmos/`, tests in `tests/` (flat `test_*.py`).
 - **Python**: `>=3.13.2,<3.15` (CI tests on 3.13).
+- **PyPI distribution**: `py-atmos-wg1000` (import remains `pyatmos`).
 - **Dependencies**: **uv** (`uv.lock` committed). Groups: `dev`, `test`, `docs`.
 - **Build**: hatchling + **hatch-vcs** — version is CalVer from git tags; never hardcode a version in `pyproject.toml`.
 - **Releases**: tag push → `.github/workflows/release.yml` (PyPI + GitHub Release). `main` may cut stable or `aN`/`bN`/`rcN`; `release/YYYY.M` trains may cut pre-releases only. Ruleset checklist: `.github/branch-protection-checklist.md`.
