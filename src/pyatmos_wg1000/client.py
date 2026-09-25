@@ -90,10 +90,15 @@ class AtmosClient:
         await self.aclose()
 
     async def connect(self) -> None:
-        """Open ``wss://<host>:<port>/api/wss``."""
+        """Open ``wss://<host>:<port>/api/wss``.
+
+        SSL context construction is run in a worker thread so Home Assistant
+        does not see blocking ``load_default_certs`` on the event loop.
+        """
         if self._socket is not None:
             return
-        self._socket = await connect(self.url, ssl=self._ssl_context())
+        ssl_context = await asyncio.to_thread(self._ssl_context)
+        self._socket = await connect(self.url, ssl=ssl_context)
         logger.debug("connected to %s", self.url)
 
     async def aclose(self) -> None:
@@ -221,11 +226,17 @@ class AtmosClient:
         return decode_server_frame(message)
 
     def _ssl_context(self) -> ssl.SSLContext:
-        context = ssl.create_default_context()
+        """Build an SSL context for the WebSocket.
+
+        When verification is disabled (typical for the private device CA),
+        skip ``create_default_context`` so the system CA store is never loaded.
+        """
         if not self._verify_tls:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE  # nosec B503 - explicit opt-out; the device CA is private
-        return context
+            context.verify_mode = ssl.CERT_NONE  # nosec B503
+            return context
+        return ssl.create_default_context()
 
 
 def _only_payload(frame: Frame, code: CommandCode) -> bytes:

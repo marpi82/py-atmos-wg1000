@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`).
 
+## [2026.9.0b2] - 2026-09-25
+
+### Fixed
+
+- Build the TLS context in a worker thread and skip loading the system CA store when `verify_tls=False`, so Home Assistant no longer flags blocking `load_default_certs` on connect.
+
 ## [Unreleased]
 
 ### Changed
