@@ -2,9 +2,9 @@
 
 ## Reporting Security Vulnerabilities
 
-If you discover a security vulnerability in py-atmos, please report it privately:
+If you discover a security vulnerability in py-atmos-wg1000, please report it privately:
 
-- **Preferred**: [GitHub private vulnerability reporting](https://github.com/marpi82/py-atmos/security/advisories/new)
+- **Preferred**: [GitHub private vulnerability reporting](https://github.com/marpi82/py-atmos-wg1000/security/advisories/new)
 - **Alternative**: email marpi82.dev@google.com
 
 Please do not create a public GitHub issue for security vulnerabilities.
@@ -34,7 +34,7 @@ There are currently **no active dependency vulnerability exceptions** in this re
 
 ## Security Best Practices
 
-When using py-atmos:
+When using py-atmos-wg1000:
 
 1. Keep dependencies updated (`uv sync --upgrade` in a controlled PR).
 2. Run `uv run --group dev poe security` before releases.

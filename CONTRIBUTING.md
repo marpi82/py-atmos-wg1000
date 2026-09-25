@@ -1,10 +1,10 @@
-# Contributing to py-atmos
+# Contributing to py-atmos-wg1000
 
-Thanks for helping improve py-atmos.
+Thanks for helping improve py-atmos-wg1000.
 
 ## How to contribute
 
-1. Open an issue describing the bug or enhancement (optional but appreciated) — use the [issue templates](https://github.com/marpi82/py-atmos/issues/new/choose).
+1. Open an issue describing the bug or enhancement (optional but appreciated) — use the [issue templates](https://github.com/marpi82/py-atmos-wg1000/issues/new/choose).
 2. Fork the repository and create a feature branch from `main`.
 3. Make your changes with tests where practical.
 4. Open a pull request against `main` (the [PR template](.github/PULL_REQUEST_TEMPLATE.md) is applied automatically).

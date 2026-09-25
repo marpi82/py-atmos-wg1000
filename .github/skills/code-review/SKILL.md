@@ -1,9 +1,9 @@
 ---
 name: code-review
-description: Review checklist for py-atmos pull requests. Use when reviewing PRs to verify WebSocket protocol correctness, config vs runtime split, async safety, mypy strict compliance, public API stability, tests, and security.
+description: Review checklist for py-atmos-wg1000 pull requests. Use when reviewing PRs to verify WebSocket protocol correctness, config vs runtime split, async safety, mypy strict compliance, public API stability, tests, and security.
 ---
 
-# Code Review — py-atmos
+# Code Review — py-atmos-wg1000
 
 Review procedure for pull requests to this library. Work through every section; only comment on real issues, with file/line references and a concrete suggested fix.
 

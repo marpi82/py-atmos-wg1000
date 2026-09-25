@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Apply repository hardening for py-atmos (rulesets + settings).
+# Apply repository hardening for py-atmos-wg1000 (rulesets + settings).
 # Requires: gh auth with repo admin scopes.
 set -euo pipefail
 
 OWNER="${OWNER:-marpi82}"
-REPO="${REPO:-py-atmos}"
+REPO="${REPO:-py-atmos-wg1000}"
 API="repos/${OWNER}/${REPO}"
 
 need_auth() {

@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/marpi82/py-atmos/security/advisories/new
+    url: https://github.com/marpi82/py-atmos-wg1000/security/advisories/new
     about: Do not file a public issue. Use private vulnerability reporting (or email marpi82.dev@google.com). See SECURITY.md.
   - name: Documentation
-    url: https://marpi82.github.io/py-atmos/
-    about: Sphinx docs for py-atmos (when Pages is enabled).
+    url: https://marpi82.github.io/py-atmos-wg1000/
+    about: Sphinx docs for py-atmos-wg1000 (when Pages is enabled).

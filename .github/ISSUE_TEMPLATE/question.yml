@@ -8,7 +8,7 @@ body:
       value: |
         Prefer this when you are unsure whether something is a bug.
 
-        For setup help, see [CONTRIBUTING.md](https://github.com/marpi82/py-atmos/blob/main/CONTRIBUTING.md) and [AGENTS.md](https://github.com/marpi82/py-atmos/blob/main/AGENTS.md).
+        For setup help, see [CONTRIBUTING.md](https://github.com/marpi82/py-atmos-wg1000/blob/main/CONTRIBUTING.md) and [AGENTS.md](https://github.com/marpi82/py-atmos-wg1000/blob/main/AGENTS.md).
 
   - type: textarea
     id: question

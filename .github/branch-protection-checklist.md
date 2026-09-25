@@ -8,7 +8,7 @@ Release channel policy (enforced in CI by `.github/workflows/release.yml`):
 - **`main`**: stable CalVer tags and pre-releases (`aN` / `bN` / `rcN`)
 - **`release/*`**: pre-releases only — stable tags fail unless the tagged commit is on `origin/main`
 
-Apply or refresh via `scripts/apply_github_hardening.sh`. UI: https://github.com/marpi82/py-atmos/settings/rules
+Apply or refresh via `scripts/apply_github_hardening.sh`. UI: https://github.com/marpi82/py-atmos-wg1000/settings/rules
 
 ## Branch ruleset: `main`
 

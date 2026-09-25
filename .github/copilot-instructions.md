@@ -1,4 +1,4 @@
-# py-atmos Copilot Instructions
+# py-atmos-wg1000 Copilot Instructions
 
 ## Critical AI Guidelines
 
@@ -17,7 +17,7 @@
 
 ## Project Overview
 
-**py-atmos** talks to a local ATMOS WG1000 over a binary WebSocket (`/api/wss`).
+**py-atmos-wg1000** talks to a local ATMOS WG1000 over a binary WebSocket (`/api/wss`).
 
 - **Config time**: download language tables, resolve labels (`LanguageCatalog`)
 - **Runtime**: keep one socket, log in, poll registers (`AtmosFeed` → `ValueStore` / `EventBus`)
