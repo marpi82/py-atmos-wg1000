@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 class AtmosError(Exception):
-    """Base error for py-atmos."""
+    """Base error for py-atmos-wg1000."""
 
 
 class ProtocolError(AtmosError):

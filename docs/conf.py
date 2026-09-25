@@ -1,4 +1,4 @@
-"""Sphinx configuration for py-atmos."""
+"""Sphinx configuration for py-atmos-wg1000."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.abspath("../src"))
 
-project = "py-atmos"
+project = "py-atmos-wg1000"
 author = "MarPi82"
 copyright = f"{datetime.now():%Y}, {author}"
 

@@ -9,6 +9,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ### Changed
 
+- GitHub repository renamed to `marpi82/py-atmos-wg1000`.
 - PyPI distribution name is `py-atmos-wg1000` (normalized name collision with existing `pyatmos` on PyPI).
 - Import package renamed to `pyatmos_wg1000` so a future RS-485 client can live as `pyatmos_rs485`.
 

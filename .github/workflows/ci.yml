@@ -141,7 +141,7 @@ jobs:
         with:
           files: ./coverage.xml
           flags: unittests
-          name: py-atmos
+          name: py-atmos-wg1000
           fail_ci_if_error: false
           # Protected branches reject tokenless/OIDC-only uploads; without this
           # codecov/patch never reports and blocks required-check merges.
@@ -153,7 +153,7 @@ jobs:
         with:
           files: ./coverage.xml
           flags: unittests
-          name: py-atmos
+          name: py-atmos-wg1000
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 

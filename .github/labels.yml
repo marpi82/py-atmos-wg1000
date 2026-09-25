@@ -45,8 +45,8 @@
 - name: performance
   description: Performance
   color: "016175"
-- name: py-atmos
-  description: py-atmos repository
+- name: py-atmos-wg1000
+  description: py-atmos-wg1000 repository
   color: 1d76db
 - name: python
   description: Pull requests that update Python code
