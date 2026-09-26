@@ -418,7 +418,8 @@ def _scaled_half(raw: int) -> float:
 
 
 def _encode_temp_half(celsius: float) -> int:
-    return round((celsius + 64) * 64) & 0xFFFF
+    """Encode °C to the low 16-bit half using JS ``Math.round`` half-up."""
+    return math.floor((celsius + 64) * 64 + 0.5) & 0xFFFF
 
 
 def _pack_u32(value: int) -> bytes:

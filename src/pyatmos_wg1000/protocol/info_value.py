@@ -143,10 +143,6 @@ def parse_info_display(value: str) -> tuple[InfoValuePart, ...]:
 
     right = parse_part(halves[1])
     left = parse_part(halves[0], default_unit=right.unit_token)
-    if left.kind is InfoValueKind.NUMBER and left.unit_token is None and right.unit_token is not None:
-        left = left.model_copy(update={"unit_token": right.unit_token})
-    if left.kind is InfoValueKind.MISSING and left.unit_token is None and right.unit_token is not None:
-        left = left.model_copy(update={"unit_token": right.unit_token})
     return (left, right)
 
 
