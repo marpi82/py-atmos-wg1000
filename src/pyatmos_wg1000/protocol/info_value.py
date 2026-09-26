@@ -235,12 +235,39 @@ def parse_info_row(
 
     Returns:
         Named parts ready for Home Assistant entity creation.
+
+    Notes:
+        Mode rows with a single-token caption (e.g. ``Tryb``) always yield two
+        parts: selection keeps the caption name, effective mode uses the inner
+        token (or the bare value when there is no parenthesis).
     """
     parts = parse_info_display(value)
+    parts = _expand_bare_mode_pair(caption, parts)
     names = part_names(caption=caption, text_a=text_a, text_b=text_b, n_parts=len(parts))
     if len(parts) == 2:
         names = _refine_mixed_dual_names(caption, names, parts)
     return tuple(part.model_copy(update={"name": names[i]}) for i, part in enumerate(parts))
+
+
+def _is_mode_caption(caption: str) -> bool:
+    """Return True for short regime captions like ``Tryb`` / ``Mode``."""
+    text = caption.strip()
+    if not text or " / " in text or " - " in text:
+        return False
+    return " " not in text
+
+
+def _expand_bare_mode_pair(
+    caption: str,
+    parts: tuple[InfoValuePart, ...],
+) -> tuple[InfoValuePart, ...]:
+    """Duplicate a bare regime value into selection + effective parts."""
+    if len(parts) != 1 or not _is_mode_caption(caption):
+        return parts
+    only = parts[0]
+    if only.kind is not InfoValueKind.TEXT or not only.raw:
+        return parts
+    return (only, only.model_copy())
 
 
 def _refine_mixed_dual_names(
@@ -248,18 +275,35 @@ def _refine_mixed_dual_names(
     names: tuple[str, ...],
     parts: tuple[InfoValuePart, ...],
 ) -> tuple[str, ...]:
-    """Replace ``Caption (1)/(2)`` when one side is text/binary/valve."""
+    """Improve fallback ``Caption (1)/(2)`` names for mixed or mode pairs."""
     if len(parts) != 2 or len(names) != 2:
         return names
     base = caption.strip() or "Info"
-    if names != (f"{base} (1)", f"{base} (2)"):
-        return names
+    indexed = names == (f"{base} (1)", f"{base} (2)")
     numeric = {InfoValueKind.NUMBER, InfoValueKind.MISSING}
     left, right = parts[0], parts[1]
+
+    # ``Auto (Komfort)`` / bare ``Standby`` duplicated: selection=caption, effect=token.
+    if left.kind is InfoValueKind.TEXT and right.kind is InfoValueKind.TEXT:
+        if indexed or _is_mode_caption(caption):
+            effect = right.raw or left.raw or base
+            return (base, effect)
+        return names
+
+    if not indexed:
+        return names
     if left.kind in numeric and right.kind in numeric:
         return names
-    if left.kind not in numeric and right.kind not in numeric:
-        return (left.raw or base, right.raw or base)
+    # Binary/valve halves keep the panel caption (never ``OFF`` as the entity name).
+    if left.kind in (InfoValueKind.BINARY, InfoValueKind.VALVE) and right.kind in numeric:
+        return (base, f"{base} (2)")
+    if right.kind in (InfoValueKind.BINARY, InfoValueKind.VALVE) and left.kind in numeric:
+        return (f"{base} (1)", base)
+    if left.kind in (InfoValueKind.BINARY, InfoValueKind.VALVE) and right.kind not in numeric:
+        return (base, f"{base} (2)")
+    if right.kind in (InfoValueKind.BINARY, InfoValueKind.VALVE) and left.kind not in numeric:
+        return (f"{base} (1)", base)
+    # Number + status text (e.g. ``18,9 °C / Tryb letni``).
     left_name = base if left.kind in numeric else (left.raw or base)
     right_name = base if right.kind in numeric else (right.raw or base)
     return (left_name, right_name)

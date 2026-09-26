@@ -7,6 +7,15 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+## [2026.9.0b7] - 2026-09-26
+
+### Fixed
+
+- Mode rows (``Tryb`` / ``Auto (Komfort)``): selection keeps the caption name,
+  effective mode uses the inner token; bare regime values expand to two parts.
+- Binary dual values (``OFF / 6 min``) keep the panel caption instead of naming
+  entities ``OFF`` / status text.
+
 ## [2026.9.0b6] - 2026-09-26
 
 ### Fixed
