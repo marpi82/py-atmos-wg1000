@@ -113,6 +113,13 @@ def test_part_names_qualify_short_requirement_half() -> None:
     )
     assert left == "Wymagana temp. pokoj."
     assert right == "Wymagana temp. pokoj. (wymag.)"
+    # Stem contained in the left half (no trailing period) is also qualified.
+    assert part_names(
+        caption="Wymagana temp. / wymag",
+        text_a="",
+        text_b="",
+        n_parts=2,
+    )[1] == "Wymagana temp. (wymag)"
 
 
 def test_part_names_dashed_valve_caption() -> None:
