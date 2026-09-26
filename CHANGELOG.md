@@ -7,6 +7,13 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+### Added
+
+- ``scripts/audit_info_names.py`` and ``protocol/info_naming_corpus.py``: offline
+  Info entity-name corpus (live panel rows + mode captions for all gateway UI
+  languages). Run ``uv run python scripts/audit_info_names.py --langs --strict``
+  before cutting a release.
+
 ## [2026.9.0b8] - 2026-09-26
 
 ### Fixed

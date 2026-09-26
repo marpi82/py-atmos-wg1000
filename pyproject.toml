@@ -126,6 +126,7 @@ fix = ["lint", "fmt"]
 typecheck = "mypy"
 test = { cmd = "pytest -q" }
 cov = { cmd = "pytest -q --cov=pyatmos_wg1000 --cov-report=term-missing" }
+audit-names = { cmd = "python scripts/audit_info_names.py --langs --strict" }
 bandit = { cmd = "bandit -r src -q -ll" }
 pip-audit = { cmd = "pip-audit --skip-editable --progress-spinner off" }
 security = ["bandit", "pip-audit"]
