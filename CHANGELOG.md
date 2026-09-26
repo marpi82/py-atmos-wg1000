@@ -7,6 +7,19 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+## [2026.9.0b6] - 2026-09-26
+
+### Fixed
+
+- Dashed Info captions keep the full panel head on both entities
+  (``Siłow. RLA3O / RLA3Z - pozycja`` / ``… - ruch``); TextA/TextB terminal
+  codes are ignored when the caption already encodes the label.
+- Mixed number/text dual values without a dual caption use the caption for the
+  numeric side and the raw token for text (e.g. ``Średnia temp. zewnętrz.`` +
+  ``Tryb letni``).
+- ``Auto(comfort)`` splits without requiring a space; outer/inner become two
+  named mode entities.
+
 ## [2026.9.0b5] - 2026-09-26
 
 ### Fixed
