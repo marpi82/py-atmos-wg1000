@@ -189,7 +189,7 @@ def test_named_row_parse() -> None:
 
 
 def test_mixed_dual_row_uses_caption_and_text_token() -> None:
-    """Number + text without a dual caption becomes caption + raw text."""
+    """Number + multi-word text keeps the text token; single-word uses caption (2)."""
     parts = parse_info_row(
         value="18,9 °C / Tryb letni",
         caption="Średnia temp. zewnętrz.",
@@ -198,34 +198,44 @@ def test_mixed_dual_row_uses_caption_and_text_token() -> None:
     assert parts[0].kind is InfoValueKind.NUMBER
     assert parts[1].name == "Tryb letni"
     assert parts[1].kind is InfoValueKind.TEXT
+    status = parse_info_row(
+        value="25,4 °C / Dozwolone",
+        caption="Przycisk cykli ZRF",
+        text_a="VI5",
+    )
+    assert status[0].name == "Przycisk cykli ZRF"
+    assert status[1].name == "Przycisk cykli ZRF (2)"
+    assert status[1].raw == "Dozwolone"
 
 
 def test_auto_comfort_paren_names_caption_and_effect() -> None:
-    """Mode pairs keep caption on the selection and the inner token on the effect."""
+    """Mode pairs: device gets effective mode, caption entity gets selection."""
     assert split_display("Auto(comfort)") == ["Auto", "comfort"]
     parts = parse_info_row(value="Auto(comfort)", caption="Tryb")
-    assert parts[0].name == "Tryb"
-    assert parts[0].raw == "Auto"
-    assert parts[1].name == "comfort"
-    assert parts[1].raw == "comfort"
+    assert parts[0].name == ""
+    assert parts[0].raw == "comfort"
+    assert parts[1].name == "Tryb"
+    assert parts[1].raw == "Auto"
     spaced = parse_info_row(value="Auto (Komfort)", caption="Tryb")
-    assert spaced[0].name == "Tryb"
-    assert spaced[0].raw == "Auto"
-    assert spaced[1].name == "Komfort"
-    assert spaced[1].raw == "Komfort"
+    assert spaced[0].name == ""
+    assert spaced[0].raw == "Komfort"
+    assert spaced[1].name == "Tryb"
+    assert spaced[1].raw == "Auto"
 
 
 def test_bare_mode_expands_to_selection_and_effect() -> None:
-    """Bare regime values under a short caption become two identical mode parts."""
+    """Bare regime values: nameless effective + caption selection, same value."""
     parts = parse_info_row(value="Standby", caption="Tryb")
     assert len(parts) == 2
-    assert parts[0].name == "Tryb"
+    assert parts[0].name == ""
     assert parts[0].raw == "Standby"
-    assert parts[1].name == "Standby"
+    assert parts[1].name == "Tryb"
     assert parts[1].raw == "Standby"
     comfort = parse_info_row(value="Komfort", caption="Tryb")
-    assert comfort[0].name == "Tryb"
-    assert comfort[1].name == "Komfort"
+    assert comfort[0].name == ""
+    assert comfort[0].raw == "Komfort"
+    assert comfort[1].name == "Tryb"
+    assert comfort[1].raw == "Komfort"
 
 
 def test_binary_plus_number_keeps_caption_names() -> None:
@@ -261,9 +271,8 @@ def test_refine_mixed_dual_names_guards() -> None:
     assert _refine_mixed_dual_names("X", ("a",), empty) == ("a",)
     num = InfoValuePart(kind=InfoValueKind.NUMBER, raw="1", number=1.0)
     text = InfoValuePart(kind=InfoValueKind.TEXT, raw="", text="")
-    assert _refine_mixed_dual_names("", ("Info (1)", "Info (2)"), (num, text)) == ("Info", "Info")
-    assert _refine_mixed_dual_names("M", ("M (1)", "M (2)"), (text, text)) == ("M", "M")
-    # Non-mode dual text with an existing slash caption keeps those names.
+    assert _refine_mixed_dual_names("", ("Info (1)", "Info (2)"), (num, text)) == ("Info", "Info (2)")
+    # Non-indexed names are left alone.
     assert _refine_mixed_dual_names(
         "left / right",
         ("left", "right"),

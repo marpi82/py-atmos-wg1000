@@ -7,6 +7,16 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+## [2026.9.0b8] - 2026-09-26
+
+### Fixed
+
+- Mode rows: effective regime uses an empty name (device title in HA) and the
+  caption entity holds the selection — ``Auto (Komfort)`` → device=Komfort +
+  ``Tryb``=Auto; bare ``Standby`` → device=Standby + ``Tryb``=Standby.
+- Single-word status halves (``Dozwolone``) stay under the panel caption
+  (``Przycisk cykli ZRF (2)``) instead of becoming the entity name.
+
 ## [2026.9.0b7] - 2026-09-26
 
 ### Fixed
