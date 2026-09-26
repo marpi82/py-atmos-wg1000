@@ -58,3 +58,13 @@ def test_run_case_reports_expectation_mismatches() -> None:
     )
     assert any(item.startswith("names ") for item in smells)
     assert any(item.startswith("raws ") for item in smells)
+    _parts, raw_only = run_case(
+        NamingCase(
+            id="raw-only",
+            caption="Tryb",
+            value="Komfort",
+            expect_raws=("nope", "nope"),
+        )
+    )
+    assert any(item.startswith("raws ") for item in raw_only)
+    assert not any(item.startswith("names ") for item in raw_only)
