@@ -15,14 +15,14 @@ from pyatmos_wg1000.protocol.info_value import InfoValueKind, InfoValuePart
 
 
 @pytest.mark.parametrize("case", panel_corpus(), ids=lambda c: c.id)
-def test_panel_naming_corpus(case) -> None:
+def test_panel_naming_corpus(case: NamingCase) -> None:
     """Live PL panel rows keep the expected HA-facing names."""
     _parts, smells = run_case(case)
     assert smells == [], smells
 
 
 @pytest.mark.parametrize("case", mode_caption_corpus(), ids=lambda c: c.id)
-def test_mode_captions_all_gateway_langs(case) -> None:
+def test_mode_captions_all_gateway_langs(case: NamingCase) -> None:
     """Every known gateway mode caption yields device + caption entities."""
     parts, smells = run_case(case)
     assert smells == [], smells

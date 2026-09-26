@@ -22,9 +22,17 @@ from pyatmos_wg1000.protocol.info_naming_corpus import (
     panel_corpus,
     run_case,
 )
+from pyatmos_wg1000.protocol.info_value import InfoValuePart
 
 
-def _print_case(case_id: str, device: str, caption: str, value: str, parts, smells: list[str]) -> None:
+def _print_case(
+    case_id: str,
+    device: str,
+    caption: str,
+    value: str,
+    parts: tuple[InfoValuePart, ...],
+    smells: list[str],
+) -> None:
     status = "FAIL" if smells else "ok"
     print(f"[{status}] {case_id}")
     print(f"  caption={caption!r} value={value!r}")
