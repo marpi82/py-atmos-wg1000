@@ -34,6 +34,25 @@ _NUMBER_UNIT = re.compile(
 _PAREN = re.compile(r"^(?P<outer>.+?)\s*\((?P<inner>[^)]+)\)\s*$")
 _DATE = re.compile(r"^\d{1,2}\.\d{1,2}\.\d{4}$")
 
+# Info "mode" row labels from the gateway language tables (not OwnText circuit names).
+_MODE_LABELS = frozenset(
+    {
+        "tryb",
+        "mode",
+        "modus",
+        "betrieb",
+        "modo",
+        "mod",
+        "režim",
+        "režiim",
+        "drift",
+        "läge",
+        "način",
+        "üzemmód",
+        "режим",
+    }
+)
+
 
 class InfoValueKind(StrEnum):
     """Classification of one Info value part."""
@@ -237,13 +256,14 @@ def parse_info_row(
         Named parts ready for Home Assistant entity creation.
 
     Notes:
-        Mode rows with a single-token caption (e.g. ``Tryb``) always yield two
-        parts: effective mode (empty name → device title in HA) then selection
-        named like the caption. ``Auto (Komfort)`` → device=Komfort, Tryb=Auto;
-        bare ``Standby`` → device=Standby, Tryb=Standby.
+        Mode rows use the catalog label (usually TextA ``Tryb`` / ``Mode``), not
+        an OwnText circuit name in the caption field. Effective mode keeps an
+        empty name (device title in HA); selection is named like ``Tryb``.
+        ``Auto (Komfort)`` → device=Komfort, Tryb=Auto; bare ``Standby`` under
+        caption OwnText ``Dom`` + TextA ``Tryb`` → device=Standby, Tryb=Standby.
     """
     parts = parse_info_display(value)
-    mode = _mode_pair_parts(caption, parts)
+    mode = _mode_pair_parts(caption=caption, text_a=text_a, text_b=text_b, parts=parts)
     if mode is not None:
         return mode
     names = part_names(caption=caption, text_a=text_a, text_b=text_b, n_parts=len(parts))
@@ -252,28 +272,39 @@ def parse_info_row(
     return tuple(part.model_copy(update={"name": names[i]}) for i, part in enumerate(parts))
 
 
-def _is_mode_caption(caption: str) -> bool:
-    """Return True for short regime captions like ``Tryb`` / ``Mode``."""
-    text = caption.strip()
-    if not text or " / " in text or " - " in text:
+def _is_mode_label(text: str) -> bool:
+    """Return True for known Info regime-row labels (``Tryb``, ``Mode``, …)."""
+    token = text.strip()
+    if not token or " " in token or " / " in token or " - " in token:
         return False
-    return " " not in text
+    return token.casefold() in _MODE_LABELS
+
+
+def _regime_row_label(caption: str, text_a: str, text_b: str) -> str | None:
+    """Pick the panel mode label; TextA wins over OwnText circuit captions."""
+    for candidate in (text_a, text_b, caption):
+        if _is_mode_label(candidate):
+            return candidate.strip()
+    return None
 
 
 def _mode_pair_parts(
+    *,
     caption: str,
+    text_a: str,
+    text_b: str,
     parts: tuple[InfoValuePart, ...],
 ) -> tuple[InfoValuePart, InfoValuePart] | None:
-    """Build effective (nameless) + selection (caption) parts for regime rows."""
-    if not _is_mode_caption(caption):
+    """Build effective (nameless) + selection (Tryb/Mode/…) parts for regime rows."""
+    label = _regime_row_label(caption, text_a, text_b)
+    if label is None:
         return None
-    base = caption.strip()
     if len(parts) == 1:
         only = parts[0]
         if only.kind is not InfoValueKind.TEXT or not only.raw:
             return None
         effective = only.model_copy(update={"name": ""})
-        selection = only.model_copy(update={"name": base})
+        selection = only.model_copy(update={"name": label})
         return (effective, selection)
     if (
         len(parts) == 2
@@ -284,7 +315,7 @@ def _mode_pair_parts(
     ):
         outer, inner = parts[0], parts[1]
         effective = inner.model_copy(update={"name": ""})
-        selection = outer.model_copy(update={"name": base})
+        selection = outer.model_copy(update={"name": label})
         return (effective, selection)
     return None
 

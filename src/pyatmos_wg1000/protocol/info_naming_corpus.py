@@ -72,7 +72,8 @@ def panel_corpus() -> tuple[NamingCase, ...]:
         NamingCase(
             id="mode-bare-comfort",
             device="Dom",
-            caption="Tryb",
+            caption="Dom",
+            text_a="Tryb",
             value="Komfort",
             expect_names=("", "Tryb"),
             expect_raws=("Komfort", "Komfort"),
@@ -80,23 +81,26 @@ def panel_corpus() -> tuple[NamingCase, ...]:
         NamingCase(
             id="mode-bare-standby",
             device="Poddasze",
-            caption="Tryb",
+            caption="Poddasze",
+            text_a="Tryb",
             value="Standby",
             expect_names=("", "Tryb"),
             expect_raws=("Standby", "Standby"),
         ),
         NamingCase(
             id="mode-auto-comfort",
-            device="TUV",
-            caption="Tryb",
+            device="CWU",
+            caption="",
+            text_a="Tryb",
             value="Auto (Komfort)",
             expect_names=("", "Tryb"),
             expect_raws=("Komfort", "Auto"),
         ),
         NamingCase(
             id="mode-auto-comfort-nospace",
-            device="TUV",
-            caption="Tryb",
+            device="CWU",
+            caption="",
+            text_a="Tryb",
             value="Auto(comfort)",
             expect_names=("", "Tryb"),
             expect_raws=("comfort", "Auto"),
@@ -153,17 +157,22 @@ def panel_corpus() -> tuple[NamingCase, ...]:
 
 
 def mode_caption_corpus() -> tuple[NamingCase, ...]:
-    """Mode rows for every known gateway UI language caption."""
+    """Mode rows for every known gateway UI language label (TextA path).
+
+    Live Info puts OwnText circuit names in the caption and the catalog
+    ``Tryb``/``Mode``/… string in TextA (regulator id 1281).
+    """
     cases: list[NamingCase] = []
-    for lang, caption in MODE_CAPTIONS.items():
+    for lang, label in MODE_CAPTIONS.items():
         values = MODE_VALUES.get(lang) or MODE_VALUES["en"]
         cases.append(
             NamingCase(
                 id=f"mode-{lang}-bare",
                 device=f"Circuit-{lang}",
-                caption=caption,
+                caption=f"Circuit-{lang}",
+                text_a=label,
                 value=values["comfort"],
-                expect_names=("", caption),
+                expect_names=("", label),
                 expect_raws=(values["comfort"], values["comfort"]),
             )
         )
@@ -171,9 +180,10 @@ def mode_caption_corpus() -> tuple[NamingCase, ...]:
             NamingCase(
                 id=f"mode-{lang}-auto",
                 device=f"TUV-{lang}",
-                caption=caption,
+                caption="",
+                text_a=label,
                 value=values["auto_comfort"],
-                expect_names=("", caption),
+                expect_names=("", label),
             )
         )
     return tuple(cases)
