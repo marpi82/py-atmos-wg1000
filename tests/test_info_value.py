@@ -103,6 +103,54 @@ def test_part_names_from_caption_and_codes() -> None:
     assert part_names(caption="", text_a="", text_b="", n_parts=1) == ("Info",)
 
 
+def test_part_names_qualify_short_requirement_half() -> None:
+    """Bare ``wymag.`` is kept under the left caption so HA stays readable."""
+    left, right = part_names(
+        caption="Wymagana temp. pokoj. / wymag.",
+        text_a="",
+        text_b="",
+        n_parts=2,
+    )
+    assert left == "Wymagana temp. pokoj."
+    assert right == "Wymagana temp. pokoj. (wymag.)"
+
+
+def test_part_names_dashed_valve_caption() -> None:
+    """``A / B - position / move`` uses roles, preferably with TextA/TextB codes."""
+    assert part_names(
+        caption="Siłow. MK2O / MK2Z - pozycja / ruch",
+        text_a="MK2A",
+        text_b="MK2B",
+        n_parts=2,
+    ) == ("MK2A pozycja", "MK2B ruch")
+    assert part_names(
+        caption="Siłow. MK2O / MK2Z - pozycja / ruch",
+        text_a="",
+        text_b="",
+        n_parts=2,
+    ) == ("Siłow. MK2O — pozycja", "MK2Z — ruch")
+    assert part_names(
+        caption="Servo - pozycja / ruch",
+        text_a="",
+        text_b="",
+        n_parts=2,
+    ) == ("pozycja", "ruch")
+    # Dash without a dual role in the tail falls through.
+    assert part_names(
+        caption="Room - sensor",
+        text_a="A",
+        text_b="B",
+        n_parts=2,
+    ) == ("A", "B")
+    # Empty role after the slash is rejected.
+    assert part_names(
+        caption="Head - left / ",
+        text_a="",
+        text_b="",
+        n_parts=2,
+    ) == ("Head - left /  (1)", "Head - left /  (2)")
+
+
 def test_named_row_parse() -> None:
     """parse_info_row attaches names to parts."""
     parts = parse_info_row(

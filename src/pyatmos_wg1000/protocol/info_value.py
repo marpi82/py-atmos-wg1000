@@ -163,23 +163,70 @@ def part_names(
 
     Returns:
         One name per part.
+
+    Notes:
+        Gateway captions often look like ``Room / req.`` or
+        ``Servo A / B - position / move``. Short right halves are qualified
+        with the left half so Home Assistant does not show a bare ``req.``.
     """
     if n_parts <= 0:
         return ()
     if n_parts == 1:
         return (_single_name(caption, text_a, text_b),)
 
-    if " / " in caption:
+    dashed = _names_from_dashed_caption(caption, text_a, text_b)
+    if dashed is not None:
+        return dashed
+
+    if caption.count(" / ") == 1:
         left, right = caption.split(" / ", 1)
         left, right = left.strip(), right.strip()
         if left and right:
-            return (left, right)
+            return (left, _qualify_short_half(left, right))
 
     if text_a and text_b:
         return (text_a, text_b)
 
     base = caption or text_a or text_b or "Info"
     return (f"{base} (1)", f"{base} (2)")
+
+
+def _names_from_dashed_caption(
+    caption: str,
+    text_a: str,
+    text_b: str,
+) -> tuple[str, str] | None:
+    """Parse ``PrefixA / PrefixB - roleA / roleB`` valve-style captions."""
+    if " - " not in caption:
+        return None
+    head, tail = caption.split(" - ", 1)
+    if " / " not in tail:
+        return None
+    role_left, role_right = (part.strip() for part in tail.split(" / ", 1))
+    if not role_left or not role_right:
+        return None
+    if text_a and text_b:
+        return (f"{text_a} {role_left}", f"{text_b} {role_right}")
+    if " / " in head:
+        prefix_left, prefix_right = (part.strip() for part in head.split(" / ", 1))
+        if prefix_left and prefix_right:
+            return (f"{prefix_left} — {role_left}", f"{prefix_right} — {role_right}")
+    return (role_left, role_right)
+
+
+def _qualify_short_half(left: str, right: str) -> str:
+    """Avoid orphan abbreviations like bare ``wymag.`` as an entity name.
+
+    Full role words (``move``, ``avg``) stay as-is. Trailing ``.`` marks an
+    ATMOS abbreviation; a stem contained in the left half is treated the same.
+    """
+    bare = right.rstrip(".").casefold()
+    abbreviated = right.endswith(".") or (
+        len(right) < 10 and bare in left.casefold() and bare != left.casefold()
+    )
+    if abbreviated:
+        return f"{left} ({right})"
+    return right
 
 
 def parse_info_row(
