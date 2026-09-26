@@ -221,9 +221,7 @@ def _qualify_short_half(left: str, right: str) -> str:
     ATMOS abbreviation; a stem contained in the left half is treated the same.
     """
     bare = right.rstrip(".").casefold()
-    abbreviated = right.endswith(".") or (
-        len(right) < 10 and bare in left.casefold() and bare != left.casefold()
-    )
+    abbreviated = right.endswith(".") or (len(right) < 10 and bare in left.casefold() and bare != left.casefold())
     if abbreviated:
         return f"{left} ({right})"
     return right
