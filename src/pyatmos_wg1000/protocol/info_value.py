@@ -238,11 +238,14 @@ def parse_info_row(
 
     Notes:
         Mode rows with a single-token caption (e.g. ``Tryb``) always yield two
-        parts: selection keeps the caption name, effective mode uses the inner
-        token (or the bare value when there is no parenthesis).
+        parts: effective mode (empty name → device title in HA) then selection
+        named like the caption. ``Auto (Komfort)`` → device=Komfort, Tryb=Auto;
+        bare ``Standby`` → device=Standby, Tryb=Standby.
     """
     parts = parse_info_display(value)
-    parts = _expand_bare_mode_pair(caption, parts)
+    mode = _mode_pair_parts(caption, parts)
+    if mode is not None:
+        return mode
     names = part_names(caption=caption, text_a=text_a, text_b=text_b, n_parts=len(parts))
     if len(parts) == 2:
         names = _refine_mixed_dual_names(caption, names, parts)
@@ -257,17 +260,33 @@ def _is_mode_caption(caption: str) -> bool:
     return " " not in text
 
 
-def _expand_bare_mode_pair(
+def _mode_pair_parts(
     caption: str,
     parts: tuple[InfoValuePart, ...],
-) -> tuple[InfoValuePart, ...]:
-    """Duplicate a bare regime value into selection + effective parts."""
-    if len(parts) != 1 or not _is_mode_caption(caption):
-        return parts
-    only = parts[0]
-    if only.kind is not InfoValueKind.TEXT or not only.raw:
-        return parts
-    return (only, only.model_copy())
+) -> tuple[InfoValuePart, InfoValuePart] | None:
+    """Build effective (nameless) + selection (caption) parts for regime rows."""
+    if not _is_mode_caption(caption):
+        return None
+    base = caption.strip()
+    if len(parts) == 1:
+        only = parts[0]
+        if only.kind is not InfoValueKind.TEXT or not only.raw:
+            return None
+        effective = only.model_copy(update={"name": ""})
+        selection = only.model_copy(update={"name": base})
+        return (effective, selection)
+    if (
+        len(parts) == 2
+        and parts[0].kind is InfoValueKind.TEXT
+        and parts[1].kind is InfoValueKind.TEXT
+        and parts[0].raw
+        and parts[1].raw
+    ):
+        outer, inner = parts[0], parts[1]
+        effective = inner.model_copy(update={"name": ""})
+        selection = outer.model_copy(update={"name": base})
+        return (effective, selection)
+    return None
 
 
 def _refine_mixed_dual_names(
@@ -275,23 +294,15 @@ def _refine_mixed_dual_names(
     names: tuple[str, ...],
     parts: tuple[InfoValuePart, ...],
 ) -> tuple[str, ...]:
-    """Improve fallback ``Caption (1)/(2)`` names for mixed or mode pairs."""
+    """Improve fallback ``Caption (1)/(2)`` names for mixed dual values."""
     if len(parts) != 2 or len(names) != 2:
         return names
     base = caption.strip() or "Info"
     indexed = names == (f"{base} (1)", f"{base} (2)")
-    numeric = {InfoValueKind.NUMBER, InfoValueKind.MISSING}
-    left, right = parts[0], parts[1]
-
-    # ``Auto (Komfort)`` / bare ``Standby`` duplicated: selection=caption, effect=token.
-    if left.kind is InfoValueKind.TEXT and right.kind is InfoValueKind.TEXT:
-        if indexed or _is_mode_caption(caption):
-            effect = right.raw or left.raw or base
-            return (base, effect)
-        return names
-
     if not indexed:
         return names
+    numeric = {InfoValueKind.NUMBER, InfoValueKind.MISSING}
+    left, right = parts[0], parts[1]
     if left.kind in numeric and right.kind in numeric:
         return names
     # Binary/valve halves keep the panel caption (never ``OFF`` as the entity name).
@@ -303,10 +314,15 @@ def _refine_mixed_dual_names(
         return (base, f"{base} (2)")
     if right.kind in (InfoValueKind.BINARY, InfoValueKind.VALVE) and left.kind not in numeric:
         return (f"{base} (1)", base)
-    # Number + status text (e.g. ``18,9 °C / Tryb letni``).
-    left_name = base if left.kind in numeric else (left.raw or base)
-    right_name = base if right.kind in numeric else (right.raw or base)
-    return (left_name, right_name)
+    # Number + status text. Multi-word labels keep the token (``Tryb letni``);
+    # single-word statuses stay under the caption (``Dozwolone`` → ``Caption (2)``).
+    if left.kind in numeric:
+        right_raw = (right.raw or "").strip()
+        right_name = right_raw if " " in right_raw else f"{base} (2)"
+        return (base, right_name or f"{base} (2)")
+    left_raw = (left.raw or "").strip()
+    left_name = left_raw if " " in left_raw else f"{base} (1)"
+    return (left_name or f"{base} (1)", base)
 
 
 def _single_name(caption: str, text_a: str, text_b: str) -> str:
