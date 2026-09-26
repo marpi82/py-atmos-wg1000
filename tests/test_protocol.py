@@ -14,10 +14,15 @@ from pyatmos_wg1000.protocol.params import (
     decode_acd_date,
     decode_acd_temperature,
     decode_acd_time,
+    decode_circuit_general,
+    decode_circuit_regime,
     decode_packed_setpoints,
     decode_param_read,
     decode_param_write_result,
+    encode_circuit_regime,
+    encode_packed_setpoints,
     encode_param_write,
+    regime_preset_index,
 )
 
 # Server frames captured on the LAN gateway. They contain no credentials.
@@ -104,6 +109,24 @@ def test_temperature_time_and_setpoints_from_live_words() -> None:
     pair = decode_packed_setpoints(0x1C801F00)
     assert pair.comfort_c == 1240 / 10 - 64
     assert pair.reduced_c == 1140 / 10 - 64
+    packed = encode_packed_setpoints(pair.comfort_c, pair.reduced_c)
+    round_trip = decode_packed_setpoints(packed)
+    assert round_trip.comfort_c == pair.comfort_c
+    assert round_trip.reduced_c == pair.reduced_c
+
+
+def test_circuit_regime_and_general_round_trip() -> None:
+    """Homepage OBECNE / REZIM bit layouts round-trip."""
+    word = 0x01 | (2 << 1) | (1 << 4)
+    general = decode_circuit_general(word)
+    assert general.active is True
+    assert general.temp_type == 2
+    assert general.humidity is True
+
+    packed = encode_circuit_regime(regime_preset_index("comfort"))
+    regime = decode_circuit_regime(packed)
+    assert regime.preset == "comfort"
+    assert regime.index == 5
 
 
 def test_file_chunk_header_and_ack() -> None:

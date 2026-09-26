@@ -1,0 +1,109 @@
+"""Offline checks for Info display-string parsing."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from pyatmos_wg1000.protocol.data import (
+    assemble_info_chunks,
+    decode_info_chunk,
+    expand_info_value_with,
+)
+from pyatmos_wg1000.protocol.info_value import (
+    InfoValueKind,
+    parse_info_display,
+    parse_info_row,
+    parse_part,
+    part_names,
+    split_display,
+)
+
+_FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_split_slash_and_paren_and_sn() -> None:
+    """Slash and parenthetical pairs split; S/N stays whole."""
+    assert split_display("25,0 °C / 20,9 °C") == ["25,0 °C", "20,9 °C"]
+    assert split_display("19,7 °C (65,9 %)") == ["19,7 °C", "65,9 %"]
+    assert split_display("S/N 7101") == ["S/N 7101"]
+    assert split_display("25,9 °C") == ["25,9 °C"]
+
+
+def test_parse_missing_and_number_units() -> None:
+    """Missing dashes and locale decimals classify correctly."""
+    missing = parse_part("--- °C")
+    assert missing.kind is InfoValueKind.MISSING
+    assert missing.unit_token == "°C"
+    assert missing.number is None
+
+    temp = parse_part("25,9 °C")
+    assert temp.kind is InfoValueKind.NUMBER
+    assert temp.number == 25.9
+    assert temp.unit_token == "°C"
+
+    bare = parse_part("5,1", default_unit="°C")
+    assert bare.kind is InfoValueKind.NUMBER
+    assert bare.number == 5.1
+    assert bare.unit_token == "°C"
+
+
+def test_parse_binary_and_valve() -> None:
+    """Language-invariant ON/OFF and valve tokens."""
+    assert parse_part("ON").kind is InfoValueKind.BINARY
+    assert parse_part("ON").binary_on is True
+    assert parse_part("OFF").binary_on is False
+    assert parse_part("STOP").valve == "stop"
+    assert parse_part("OPEN").valve == "open"
+    assert parse_part("CLOSE").valve == "close"
+
+
+def test_unit_inheritance_across_slash() -> None:
+    """Bare left number inherits the right half unit."""
+    left, right = parse_info_display("5,1 / 26,1 °C")
+    assert left.number == 5.1
+    assert left.unit_token == "°C"
+    assert right.number == 26.1
+    assert right.unit_token == "°C"
+
+
+def test_part_names_from_caption_and_codes() -> None:
+    """Names prefer caption slash, then text_a/text_b."""
+    assert part_names(caption="current / avg", text_a="AF", text_b="", n_parts=2) == ("current", "avg")
+    assert part_names(caption="Servo", text_a="MK1A", text_b="MK1B", n_parts=2) == ("MK1A", "MK1B")
+    assert part_names(caption="AF", text_a="AF", text_b="", n_parts=1) == ("AF",)
+
+
+def test_named_row_parse() -> None:
+    """parse_info_row attaches names to parts."""
+    parts = parse_info_row(
+        value="0 % / STOP",
+        caption="position / move",
+        text_a="MK1A",
+        text_b="MK1B",
+    )
+    assert len(parts) == 2
+    assert parts[0].name == "position"
+    assert parts[0].kind is InfoValueKind.NUMBER
+    assert parts[0].unit_token == "%"
+    assert parts[1].name == "move"
+    assert parts[1].valve == "stop"
+
+
+def test_live_fixture_dual_rows_parse() -> None:
+    """Every dual value in the live Info hex expands into two typed parts."""
+    raw = bytes.fromhex((_FIXTURES / "info_page_data.hex").read_text().strip())
+    dump = assemble_info_chunks([decode_info_chunk(raw)])
+    dual = 0
+    for item in dump.items:
+        if item.is_title:
+            continue
+        value = expand_info_value_with(lambda i: f"T{i}", item.value)
+        if value.upper().startswith("S/N"):
+            continue
+        parts = parse_info_display(value)
+        if " / " in value or ("(" in value and ")" in value):
+            assert len(parts) == 2, value
+            dual += 1
+        else:
+            assert len(parts) == 1, value
+    assert dual >= 18

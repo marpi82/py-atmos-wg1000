@@ -257,6 +257,32 @@ def decode_acd_date(word: int) -> AcdDate:
     return AcdDate(day=word & 0xFF, month=(word >> 8) & 0xFF, year=(word >> 16) & 0xFFFF)
 
 
+class CircuitGeneral(BaseModel):
+    """Decoded ``O*_OBECNE`` word (``Hod16General`` in ``Pages.js``)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    active: bool
+    temp_type: int = Field(ge=0, le=0x07)
+    humidity: bool
+
+
+def decode_circuit_general(word: int) -> CircuitGeneral:
+    """Decode an ``O*_OBECNE`` / ``TUV_OBECNE`` register word.
+
+    Args:
+        word: Raw register value.
+
+    Returns:
+        Active flag, temperature icon type, and humidity-present flag.
+    """
+    return CircuitGeneral(
+        active=bool(word & 0x01),
+        temp_type=(word >> 1) & 0x07,
+        humidity=bool((word >> 4) & 0x01),
+    )
+
+
 def decode_packed_setpoints(word: int) -> SetpointPair:
     """Split a setpoint word into comfort and reduced temperatures.
 
@@ -273,9 +299,126 @@ def decode_packed_setpoints(word: int) -> SetpointPair:
     return SetpointPair(comfort_c=_scaled_half(word & 0xFFFF), reduced_c=_scaled_half((word >> 16) & 0xFFFF))
 
 
+def encode_packed_setpoints(comfort_c: float, reduced_c: float) -> int:
+    """Pack comfort and reduced setpoints the way ``SendSetTemp`` does.
+
+    Args:
+        comfort_c: Comfort setpoint in degrees Celsius.
+        reduced_c: Reduced (útlum) setpoint in degrees Celsius.
+
+    Returns:
+        32-bit word with comfort in the low half and reduced in the high half.
+    """
+    comfort = _encode_temp_half(comfort_c)
+    reduced = _encode_temp_half(reduced_c)
+    return (comfort | (reduced << 16)) & _U32
+
+
+class CircuitRegime(BaseModel):
+    """Decoded ``O*_REZIM`` word (``Hod16Regime`` in ``Pages.js``)."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    index: int = Field(ge=0, le=0x0F)
+    week_prog: int = Field(ge=0, le=0x03)
+    date_time: int = Field(ge=0, le=0xFFFF)
+
+    @property
+    def preset(self) -> str | None:
+        """Return a simple preset name for permanent modes, else ``None``."""
+        return _REGIME_PRESETS.get(self.index)
+
+
+# Regime_menu indices in Pages.js (permanent / timed modes).
+REGIME_HOLIDAY = 0
+REGIME_ABSENCE = 1
+REGIME_VISIT = 2
+REGIME_AUTO = 3
+REGIME_SUMMER = 4
+REGIME_COMFORT = 5
+REGIME_REDUCED = 6
+REGIME_STANDBY = 7
+
+_REGIME_PRESETS: dict[int, str] = {
+    REGIME_HOLIDAY: "holiday",
+    REGIME_ABSENCE: "absence",
+    REGIME_VISIT: "visit",
+    REGIME_AUTO: "auto",
+    REGIME_SUMMER: "summer",
+    REGIME_COMFORT: "comfort",
+    REGIME_REDUCED: "reduced",
+    REGIME_STANDBY: "standby",
+}
+
+_PRESET_TO_INDEX = {name: index for index, name in _REGIME_PRESETS.items()}
+
+
+def decode_circuit_regime(word: int) -> CircuitRegime:
+    """Decode an ``O*_REZIM`` register word.
+
+    Args:
+        word: Raw register value.
+
+    Returns:
+        Regime index, optional week program, and packed date/time payload.
+    """
+    return CircuitRegime(
+        index=word & 0x0F,
+        week_prog=(word >> 4) & 0x03,
+        date_time=(word >> 6) & 0xFFFF,
+    )
+
+
+def encode_circuit_regime(
+    index: int,
+    *,
+    week_prog: int = 0,
+    date_time: int = 0,
+) -> int:
+    """Pack a regime write word the way the homepage menu does.
+
+    Args:
+        index: ``Regime_menu`` index (0..7 for known modes).
+        week_prog: Weekly program A/B/C for auto/summer (0..2).
+        date_time: End date (holiday) or end time (absence/visit).
+
+    Returns:
+        32-bit value for ``SetPrm([O*_REZIM], …)``.
+    """
+    if not 0 <= index <= 0x0F:
+        raise ProtocolError(f"regime index out of range: {index}")
+    if not 0 <= week_prog <= 0x03:
+        raise ProtocolError(f"week prog out of range: {week_prog}")
+    if not 0 <= date_time <= 0xFFFF:
+        raise ProtocolError(f"regime date/time out of range: {date_time}")
+    return ((date_time & 0xFFFF) << 6) | ((week_prog & 0x03) << 4) | (index & 0x0F)
+
+
+def regime_preset_index(preset: str) -> int:
+    """Map a simple preset name to a ``Regime_menu`` index.
+
+    Args:
+        preset: One of ``comfort``, ``reduced``, ``auto``, ``standby``, …
+
+    Returns:
+        Regime index.
+
+    Raises:
+        ProtocolError: Unknown preset name.
+    """
+    try:
+        return _PRESET_TO_INDEX[preset]
+    except KeyError as exc:
+        raise ProtocolError(f"unknown regime preset: {preset!r}") from exc
+
+
 def _scaled_half(raw: int) -> float:
     rounded = math.floor((raw * 10) / 64 + 0.5)
     return rounded / 10 - 64
+
+
+def _encode_temp_half(celsius: float) -> int:
+    return round((celsius + 64) * 64) & 0xFFFF
 
 
 def _pack_u32(value: int) -> bytes:
