@@ -209,7 +209,7 @@ def test_mixed_dual_row_uses_caption_and_text_token() -> None:
 
 
 def test_auto_comfort_paren_names_caption_and_effect() -> None:
-    """Mode pairs: device gets effective mode, caption entity gets selection."""
+    """Mode pairs: device gets effective mode, Tryb entity gets selection."""
     assert split_display("Auto(comfort)") == ["Auto", "comfort"]
     parts = parse_info_row(value="Auto(comfort)", caption="Tryb")
     assert parts[0].name == ""
@@ -221,21 +221,35 @@ def test_auto_comfort_paren_names_caption_and_effect() -> None:
     assert spaced[0].raw == "Komfort"
     assert spaced[1].name == "Tryb"
     assert spaced[1].raw == "Auto"
+    # Live WG1000: OwnText circuit name in caption, catalog "Tryb" in TextA.
+    owntext = parse_info_row(
+        value="Auto (Komfort)",
+        caption="",
+        text_a="Tryb",
+    )
+    assert owntext[0].name == ""
+    assert owntext[0].raw == "Komfort"
+    assert owntext[1].name == "Tryb"
+    assert owntext[1].raw == "Auto"
 
 
 def test_bare_mode_expands_to_selection_and_effect() -> None:
-    """Bare regime values: nameless effective + caption selection, same value."""
+    """Bare regime values: nameless effective + Tryb selection, same value."""
     parts = parse_info_row(value="Standby", caption="Tryb")
     assert len(parts) == 2
     assert parts[0].name == ""
     assert parts[0].raw == "Standby"
     assert parts[1].name == "Tryb"
     assert parts[1].raw == "Standby"
-    comfort = parse_info_row(value="Komfort", caption="Tryb")
-    assert comfort[0].name == ""
-    assert comfort[0].raw == "Komfort"
-    assert comfort[1].name == "Tryb"
-    assert comfort[1].raw == "Komfort"
+    # OwnText caption is the circuit name; TextA carries Tryb.
+    dom = parse_info_row(value="Komfort", caption="Dom", text_a="Tryb")
+    assert dom[0].name == ""
+    assert dom[0].raw == "Komfort"
+    assert dom[1].name == "Tryb"
+    assert dom[1].raw == "Komfort"
+    attic = parse_info_row(value="Standby", caption="Poddasze", text_a="Tryb")
+    assert attic[0].name == ""
+    assert attic[1].name == "Tryb"
 
 
 def test_binary_plus_number_keeps_caption_names() -> None:

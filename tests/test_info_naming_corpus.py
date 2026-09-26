@@ -23,11 +23,11 @@ def test_panel_naming_corpus(case: NamingCase) -> None:
 
 @pytest.mark.parametrize("case", mode_caption_corpus(), ids=lambda c: c.id)
 def test_mode_captions_all_gateway_langs(case: NamingCase) -> None:
-    """Every known gateway mode caption yields device + caption entities."""
+    """Every known gateway mode label (TextA) yields device + Tryb/Mode entities."""
     parts, smells = run_case(case)
     assert smells == [], smells
     assert parts[0].name == ""
-    assert parts[1].name == case.caption
+    assert parts[1].name == case.text_a
 
 
 def _text(name: str, raw: str) -> InfoValuePart:
