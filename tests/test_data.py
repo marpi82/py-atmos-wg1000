@@ -88,8 +88,8 @@ def test_resolve_text_id_own_empty_and_catalog() -> None:
     assert resolve_text_id(AC16_EMPTY_TEXT_ID, catalog, own) == ""
 
 
-def test_assemble_rejects_gap_and_incomplete() -> None:
-    """Assembler requires contiguous rows and a last flag."""
+def test_assemble_rejects_gap_incomplete_and_count_mismatch() -> None:
+    """Assembler requires contiguous rows, a last flag, and the declared row count."""
     item = InfoItem(typ=0, vzhled=0, skupina=1, text_a=1, text_b=0, caption=0, value=b"\x00")
     from pyatmos_wg1000.protocol.data import InfoChunk
 
@@ -99,3 +99,6 @@ def test_assemble_rejects_gap_and_incomplete() -> None:
     gap = InfoChunk(ac16=0, row_count=2, first_row=2, last=True, items=(item,))
     with pytest.raises(ProtocolError, match="expected 1"):
         assemble_info_chunks([first, gap])
+    short = InfoChunk(ac16=0, row_count=2, first_row=0, last=True, items=(item,))
+    with pytest.raises(ProtocolError, match="expected 2"):
+        assemble_info_chunks([short])

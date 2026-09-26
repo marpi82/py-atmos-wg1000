@@ -82,6 +82,7 @@ class AtmosClient:
         self.session_id = session_id if session_id is not None else os.urandom(SESSION_ID_LENGTH)
         self._socket: Socket | None = None
         self._lock = asyncio.Lock()
+        self._data_lock = asyncio.Lock()
 
     async def __aenter__(self) -> Self:
         """Open the WebSocket and return this client."""
@@ -181,15 +182,18 @@ class AtmosClient:
         Returns:
             NUL-separated UTF-8 slots from the gateway, in order.
         """
-        payload = encode_data_request(DataKind.OWN_TEXT, ac16, 0)
-        frame = await self.exchange([Command(channel=Channel.PAGE_DATA, code=CommandCode.DATA, payload=payload)])
-        return decode_own_text(_only_payload(frame, CommandCode.DATA))
+        async with self._data_lock:
+            payload = encode_data_request(DataKind.OWN_TEXT, ac16, 0)
+            frame = await self.exchange([Command(channel=Channel.PAGE_DATA, code=CommandCode.DATA, payload=payload)])
+            return decode_own_text(_only_payload(frame, CommandCode.DATA))
 
     async def fetch_info(self, ac16: int = 0) -> InfoDump:
         """Download one complete Info page dump for an AC16.
 
         Sends ``req=1`` to start, then ``req=0`` until the gateway sets the
-        last-chunk flag. Login is required for regulator Info rows.
+        last-chunk flag. Login is required for regulator Info rows. The whole
+        multi-frame transfer holds :attr:`_data_lock` so concurrent PAGE_DATA
+        calls cannot interleave.
 
         Args:
             ac16: Controller index. ``0`` is the first regulator.
@@ -197,20 +201,21 @@ class AtmosClient:
         Returns:
             Assembled Info rows for that controller.
         """
-        chunks: list[InfoChunk] = []
-        first = True
-        while True:
-            req = 1 if first else 0
-            payload = encode_data_request(DataKind.INFO, ac16, req)
-            frame = await self.exchange([Command(channel=Channel.PAGE_DATA, code=CommandCode.DATA, payload=payload)])
-            chunk = decode_info_chunk(_only_payload(frame, CommandCode.DATA))
-            chunks.append(chunk)
-            first = False
-            if chunk.last:
-                break
-            if len(chunks) > 256:
-                raise ProtocolError("info dump exceeded 256 chunks without a last flag")
-        return assemble_info_chunks(chunks)
+        async with self._data_lock:
+            chunks: list[InfoChunk] = []
+            first = True
+            while True:
+                req = 1 if first else 0
+                payload = encode_data_request(DataKind.INFO, ac16, req)
+                frame = await self.exchange([Command(channel=Channel.PAGE_DATA, code=CommandCode.DATA, payload=payload)])
+                chunk = decode_info_chunk(_only_payload(frame, CommandCode.DATA))
+                chunks.append(chunk)
+                first = False
+                if chunk.last:
+                    break
+                if len(chunks) > 256:
+                    raise ProtocolError("info dump exceeded 256 chunks without a last flag")
+            return assemble_info_chunks(chunks)
 
     async def download_file(self, name: str) -> bytes:
         """Download one UI bundle file and decompress it when the gateway gzipped it.

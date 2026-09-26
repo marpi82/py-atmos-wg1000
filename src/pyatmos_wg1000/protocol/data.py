@@ -121,15 +121,19 @@ def decode_own_text(payload: bytes) -> tuple[str, ...]:
     """Decode an OwnText PAGE_DATA response into NUL-separated UTF-8 strings.
 
     Args:
-        payload: Full command payload including kind and ac16, or the body only
-            (NUL-separated strings). When the first byte is ``DataKind.OWN_TEXT``
-            and the length is at least 2, kind and ac16 are stripped.
+        payload: Full command payload including kind and ac16. Body-only
+            buffers are rejected so empty leading slots (NUL bytes) are not
+            mistaken for a ``DataKind.OWN_TEXT`` header.
 
     Returns:
         The custom-name slots in order. Trailing empty fragments from a final
         NUL are dropped.
     """
-    body = _strip_data_header(payload, DataKind.OWN_TEXT)
+    if len(payload) < 2:
+        raise ProtocolError("own-text payload is shorter than kind and ac16")
+    if payload[0] != DataKind.OWN_TEXT:
+        raise ProtocolError(f"expected DataKind.OWN_TEXT, got {payload[0]}")
+    body = payload[2:]
     parts = body.split(b"\x00")
     if parts and parts[-1] == b"":
         parts = parts[:-1]
@@ -180,6 +184,7 @@ def assemble_info_chunks(chunks: Sequence[InfoChunk]) -> InfoDump:
     if not chunks:
         raise ProtocolError("info dump has no chunks")
     ac16 = chunks[0].ac16
+    expected_total = chunks[0].row_count
     items: list[InfoItem] = []
     expected_row = 0
     for chunk in chunks:
@@ -191,6 +196,8 @@ def assemble_info_chunks(chunks: Sequence[InfoChunk]) -> InfoDump:
         expected_row += len(chunk.items)
     if not chunks[-1].last:
         raise ProtocolError("info dump is incomplete (last flag unset)")
+    if len(items) != expected_total:
+        raise ProtocolError(f"info dump has {len(items)} rows, expected {expected_total}")
     return InfoDump(ac16=ac16, items=tuple(items))
 
 
@@ -260,12 +267,6 @@ def resolve_text_id(
         return ""
     text = catalog.text(f"T16_{text_id}")
     return text if text is not None else ""
-
-
-def _strip_data_header(payload: bytes, expected: DataKind) -> bytes:
-    if len(payload) >= 2 and payload[0] == int(expected):
-        return payload[2:]
-    return payload
 
 
 def _decode_info_items(data: bytes) -> tuple[InfoItem, ...]:

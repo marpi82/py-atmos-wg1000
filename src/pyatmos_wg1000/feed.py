@@ -258,8 +258,10 @@ class AtmosFeed:
         if task is None:
             return
         task.cancel()
-        with suppress(asyncio.CancelledError):
+        try:
             await task
+        except asyncio.CancelledError:
+            return
 
     async def run(self) -> None:
         """Poll until cancelled.
@@ -340,8 +342,10 @@ class InfoFeed:
         if task is None:
             return
         task.cancel()
-        with suppress(asyncio.CancelledError):
+        try:
             await task
+        except asyncio.CancelledError:
+            return
 
     async def run(self) -> None:
         """Poll until cancelled.
