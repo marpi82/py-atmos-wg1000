@@ -6,8 +6,8 @@ import pytest
 
 from pyatmos_wg1000.protocol.info_naming_corpus import (
     NamingCase,
-    naming_smells,
     mode_caption_corpus,
+    naming_smells,
     panel_corpus,
     run_case,
 )
