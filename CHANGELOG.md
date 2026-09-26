@@ -7,6 +7,14 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+## [2026.9.0b10] - 2026-09-26
+
+### Fixed
+
+- Mixed number/text duals (``15,0 °C / Tryb letni``) keep both entities under the
+  panel caption (``Średnia temp. zewnętrz.`` / ``… (2)``) instead of naming the
+  text half after its own state.
+
 ## [2026.9.0b9] - 2026-09-26
 
 ### Added

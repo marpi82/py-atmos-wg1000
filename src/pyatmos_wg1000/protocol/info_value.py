@@ -345,15 +345,11 @@ def _refine_mixed_dual_names(
         return (base, f"{base} (2)")
     if right.kind in (InfoValueKind.BINARY, InfoValueKind.VALVE) and left.kind not in numeric:
         return (f"{base} (1)", base)
-    # Number + status text. Multi-word labels keep the token (``Tryb letni``);
-    # single-word statuses stay under the caption (``Dozwolone`` → ``Caption (2)``).
+    # Number + status text: keep both under the panel caption so HA never shows
+    # ``Tryb letni: Tryb letni`` (name equals state). Same as single-word statuses.
     if left.kind in numeric:
-        right_raw = (right.raw or "").strip()
-        right_name = right_raw if " " in right_raw else f"{base} (2)"
-        return (base, right_name or f"{base} (2)")
-    left_raw = (left.raw or "").strip()
-    left_name = left_raw if " " in left_raw else f"{base} (1)"
-    return (left_name or f"{base} (1)", base)
+        return (base, f"{base} (2)")
+    return (f"{base} (1)", base)
 
 
 def _single_name(caption: str, text_a: str, text_b: str) -> str:
