@@ -188,16 +188,17 @@ def test_named_row_parse() -> None:
     assert single[0].name == "Temp. zewnętrz. AF"
 
 
-def test_mixed_dual_row_uses_caption_and_text_token() -> None:
-    """Number + multi-word text keeps the text token; single-word uses caption (2)."""
+def test_mixed_dual_row_uses_caption_for_status_text() -> None:
+    """Number + status text keeps both under the panel caption (no name==state)."""
     parts = parse_info_row(
         value="18,9 °C / Tryb letni",
         caption="Średnia temp. zewnętrz.",
     )
     assert parts[0].name == "Średnia temp. zewnętrz."
     assert parts[0].kind is InfoValueKind.NUMBER
-    assert parts[1].name == "Tryb letni"
+    assert parts[1].name == "Średnia temp. zewnętrz. (2)"
     assert parts[1].kind is InfoValueKind.TEXT
+    assert parts[1].raw == "Tryb letni"
     status = parse_info_row(
         value="25,4 °C / Dozwolone",
         caption="Przycisk cykli ZRF",
@@ -273,9 +274,10 @@ def test_mixed_dual_keeps_indexed_names_for_two_numbers() -> None:
 
 
 def test_mixed_dual_text_then_number() -> None:
-    """Text on the left keeps its raw token; the number side uses the caption."""
+    """Text on the left stays under Caption (1); the number side uses the caption."""
     parts = parse_info_row(value="Tryb letni / 18,9 °C", caption="Outdoor")
-    assert parts[0].name == "Tryb letni"
+    assert parts[0].name == "Outdoor (1)"
+    assert parts[0].raw == "Tryb letni"
     assert parts[1].name == "Outdoor"
 
 

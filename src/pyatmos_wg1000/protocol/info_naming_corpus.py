@@ -127,7 +127,7 @@ def panel_corpus() -> tuple[NamingCase, ...]:
             device="AF",
             caption="Średnia temp. zewnętrz.",
             value="18,9 °C / Tryb letni",
-            expect_names=("Średnia temp. zewnętrz.", "Tryb letni"),
+            expect_names=("Średnia temp. zewnętrz.", "Średnia temp. zewnętrz. (2)"),
         ),
         NamingCase(
             id="mixed-vf1",
@@ -212,8 +212,8 @@ def naming_smells(device: str, parts: tuple[InfoValuePart, ...]) -> list[str]:
             f"{caption} (2)" for caption in mode_caption_names
         }:
             smells.append(f"indexed mode name {part.name!r}")
-        if part.name and part.name == part.raw and " " not in part.name and part.name not in mode_caption_names:
-            smells.append(f"single-word name equals state {part.name!r}")
+        if part.name and part.name == part.raw and part.name not in mode_caption_names:
+            smells.append(f"name equals state {part.name!r}")
     labels = ha_labels(device, parts)
     if len(labels) == 2 and labels[0] == labels[1]:
         smells.append(f"duplicate HA labels {labels[0]!r}")
