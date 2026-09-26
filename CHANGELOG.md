@@ -7,12 +7,20 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+## [2026.9.0b9] - 2026-09-26
+
 ### Added
 
 - ``scripts/audit_info_names.py`` and ``protocol/info_naming_corpus.py``: offline
-  Info entity-name corpus (live panel rows + mode captions for all gateway UI
+  Info entity-name corpus (live panel rows + mode labels for all gateway UI
   languages). Run ``uv run python scripts/audit_info_names.py --langs --strict``
   before cutting a release.
+
+### Fixed
+
+- Mode rows: use the catalog regime label from TextA (``Tryb`` / ``Mode`` / …),
+  not an OwnText circuit name in the caption. Live layout
+  ``caption=Dom`` + ``text_a=Tryb`` + ``Komfort`` → device=Komfort, Tryb=Komfort.
 
 ## [2026.9.0b8] - 2026-09-26
 
