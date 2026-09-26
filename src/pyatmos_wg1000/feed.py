@@ -1,4 +1,4 @@
-"""Lightweight register acquisition.
+"""Lightweight register and Info page acquisition.
 
 The feed polls the gateway and keeps raw values. It does not load language
 files or the UI bundle. Home Assistant runtime should use this module.
@@ -16,6 +16,7 @@ from dataclasses import dataclass, field, replace
 from typing import Protocol
 
 from pyatmos_wg1000.errors import ProtocolError
+from pyatmos_wg1000.protocol.data import InfoDump
 from pyatmos_wg1000.protocol.enums import Channel, ParamType
 from pyatmos_wg1000.protocol.params import ParamRecord
 
@@ -34,6 +35,13 @@ class RegisterSource(Protocol):
         """Read the given registers."""
 
 
+class InfoSource(Protocol):
+    """The Info fetch :class:`InfoFeed` needs from a client."""
+
+    async def fetch_info(self, ac16: int = 0) -> InfoDump:
+        """Download one complete Info dump."""
+
+
 @dataclass(frozen=True)
 class RegisterUpdate:
     """One raw register value that changed since the previous poll."""
@@ -43,6 +51,15 @@ class RegisterUpdate:
     kind: ParamType
     minimum: int | None = None
     maximum: int | None = None
+    ts: float = field(default_factory=time.time)
+    seq: int = 0
+
+
+@dataclass(frozen=True)
+class InfoUpdate:
+    """One complete Info dump that differs from the previous poll."""
+
+    dump: InfoDump
     ts: float = field(default_factory=time.time)
     seq: int = 0
 
@@ -80,6 +97,50 @@ class EventBus:
             Register changes published after this call.
         """
         queue: asyncio.Queue[RegisterUpdate] = asyncio.Queue()
+        async with self._lock:
+            self._subs.append(queue)
+        try:
+            while True:
+                yield await queue.get()
+        finally:
+            async with self._lock:
+                with suppress(ValueError):
+                    self._subs.remove(queue)
+
+
+class InfoEventBus:
+    """Multicast bus for :class:`InfoUpdate` only."""
+
+    def __init__(self) -> None:
+        """Create an empty subscriber list."""
+        self._subs: list[asyncio.Queue[InfoUpdate]] = []
+        self._seq = 0
+        self._lock = asyncio.Lock()
+
+    def last_seq(self) -> int:
+        """Return the sequence of the last published event, or -1."""
+        return max(self._seq - 1, -1)
+
+    async def publish(self, update: InfoUpdate) -> None:
+        """Publish ``update`` to every current subscriber.
+
+        Args:
+            update: The change to broadcast. ``seq`` is assigned here.
+        """
+        async with self._lock:
+            event = replace(update, seq=self._seq)
+            self._seq += 1
+            targets = tuple(self._subs)
+        for queue in targets:
+            await queue.put(event)
+
+    async def subscribe(self) -> AsyncGenerator[InfoUpdate]:
+        """Yield later Info dumps until the consumer is cancelled.
+
+        Yields:
+            Info dumps published after this call.
+        """
+        queue: asyncio.Queue[InfoUpdate] = asyncio.Queue()
         async with self._lock:
             self._subs.append(queue)
         try:
@@ -218,4 +279,85 @@ class AtmosFeed:
             raise
         except Exception:
             logger.exception("register poll failed")
+            raise
+
+
+class InfoFeed:
+    """Poll the Info page dump and publish when rows change.
+
+    Args:
+        client: Connected and logged-in client that implements :meth:`fetch_info`.
+        ac16: Controller index. ``0`` is the first regulator.
+        interval: Seconds between full dumps.
+    """
+
+    def __init__(
+        self,
+        client: InfoSource,
+        *,
+        ac16: int = 0,
+        interval: float = 30.0,
+    ) -> None:
+        """Store poll settings. Nothing is fetched until :meth:`poll_once` or :meth:`run`."""
+        if interval <= 0:
+            raise ProtocolError("poll interval must be positive")
+        if not 0 <= ac16 <= 0xFF:
+            raise ProtocolError(f"ac16 out of range: {ac16}")
+        self._client = client
+        self._ac16 = ac16
+        self._interval = interval
+        self.bus = InfoEventBus()
+        self.dump: InfoDump | None = None
+        self._task: asyncio.Task[None] | None = None
+
+    async def poll_once(self) -> bool:
+        """Fetch one Info dump and publish when it differs from the last one.
+
+        Returns:
+            ``True`` when a new dump was published.
+        """
+        dump = await self._client.fetch_info(self._ac16)
+        if self.dump == dump:
+            return False
+        self.dump = dump
+        await self.bus.publish(InfoUpdate(dump=dump))
+        return True
+
+    def start(self) -> asyncio.Task[None]:
+        """Start the poll loop as a task.
+
+        Returns:
+            The running task. A second call returns the same task.
+        """
+        if self._task is None or self._task.done():
+            self._task = asyncio.create_task(self._loop(), name="atmos-info-feed")
+        return self._task
+
+    async def stop(self) -> None:
+        """Cancel the poll loop and wait until it finishes."""
+        task = self._task
+        self._task = None
+        if task is None:
+            return
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+
+    async def run(self) -> None:
+        """Poll until cancelled.
+
+        Raises:
+            Exception: Any poll error is logged and re-raised.
+        """
+        await self._loop()
+
+    async def _loop(self) -> None:
+        try:
+            while True:
+                await self.poll_once()
+                await asyncio.sleep(self._interval)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("info poll failed")
             raise

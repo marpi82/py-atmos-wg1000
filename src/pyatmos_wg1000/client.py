@@ -14,7 +14,15 @@ from typing import Protocol, Self
 from websockets.asyncio.client import connect
 
 from pyatmos_wg1000.errors import NotConnectedError, ProtocolError
-from pyatmos_wg1000.protocol.enums import Channel, CommandCode, LoginAction
+from pyatmos_wg1000.protocol.data import (
+    InfoChunk,
+    InfoDump,
+    assemble_info_chunks,
+    decode_info_chunk,
+    decode_own_text,
+    encode_data_request,
+)
+from pyatmos_wg1000.protocol.enums import Channel, CommandCode, DataKind, LoginAction
 from pyatmos_wg1000.protocol.files import decode_file_chunk, encode_file_ack, encode_file_request
 from pyatmos_wg1000.protocol.frame import SESSION_ID_LENGTH, Command, Frame, decode_server_frame, encode_client_frame
 from pyatmos_wg1000.protocol.login import LoginResult, encode_login, parse_login_result
@@ -163,6 +171,46 @@ class AtmosClient:
         """
         frame = await self.exchange([Command(channel=channel, code=CommandCode.PARAM, payload=encode_param_read(register_ids))])
         return decode_param_read(_only_payload(frame, CommandCode.PARAM))
+
+    async def fetch_own_text(self, ac16: int = 0) -> tuple[str, ...]:
+        """Download custom panel names (OwnText) for one AC16.
+
+        Args:
+            ac16: Controller index. ``0`` is the first regulator.
+
+        Returns:
+            NUL-separated UTF-8 slots from the gateway, in order.
+        """
+        payload = encode_data_request(DataKind.OWN_TEXT, ac16, 0)
+        frame = await self.exchange([Command(channel=Channel.PAGE_DATA, code=CommandCode.DATA, payload=payload)])
+        return decode_own_text(_only_payload(frame, CommandCode.DATA))
+
+    async def fetch_info(self, ac16: int = 0) -> InfoDump:
+        """Download one complete Info page dump for an AC16.
+
+        Sends ``req=1`` to start, then ``req=0`` until the gateway sets the
+        last-chunk flag. Login is required for regulator Info rows.
+
+        Args:
+            ac16: Controller index. ``0`` is the first regulator.
+
+        Returns:
+            Assembled Info rows for that controller.
+        """
+        chunks: list[InfoChunk] = []
+        first = True
+        while True:
+            req = 1 if first else 0
+            payload = encode_data_request(DataKind.INFO, ac16, req)
+            frame = await self.exchange([Command(channel=Channel.PAGE_DATA, code=CommandCode.DATA, payload=payload)])
+            chunk = decode_info_chunk(_only_payload(frame, CommandCode.DATA))
+            chunks.append(chunk)
+            first = False
+            if chunk.last:
+                break
+            if len(chunks) > 256:
+                raise ProtocolError("info dump exceeded 256 chunks without a last flag")
+        return assemble_info_chunks(chunks)
 
     async def download_file(self, name: str) -> bytes:
         """Download one UI bundle file and decompress it when the gateway gzipped it.
