@@ -31,7 +31,7 @@ _NUMBER_UNIT = re.compile(
     r"\s*$",
     re.IGNORECASE,
 )
-_PAREN = re.compile(r"^(?P<outer>.+?)\s+\((?P<inner>[^)]+)\)\s*$")
+_PAREN = re.compile(r"^(?P<outer>.+?)\s*\((?P<inner>[^)]+)\)\s*$")
 _DATE = re.compile(r"^\d{1,2}\.\d{1,2}\.\d{4}$")
 
 
@@ -165,16 +165,16 @@ def part_names(
         One name per part.
 
     Notes:
-        Gateway captions often look like ``Room / req.`` or
-        ``Servo A / B - position / move``. Short right halves are qualified
-        with the left half so Home Assistant does not show a bare ``req.``.
+        Dashed captions keep the full head on both entities
+        (``Siłow. RLA3O / RLA3Z - pozycja`` / ``… - ruch``). Terminal codes in
+        TextA/TextB are not used when the caption already encodes the panel label.
     """
     if n_parts <= 0:
         return ()
     if n_parts == 1:
         return (_single_name(caption, text_a, text_b),)
 
-    dashed = _names_from_dashed_caption(caption, text_a, text_b)
+    dashed = _names_from_dashed_caption(caption)
     if dashed is not None:
         return dashed
 
@@ -191,27 +191,18 @@ def part_names(
     return (f"{base} (1)", f"{base} (2)")
 
 
-def _names_from_dashed_caption(
-    caption: str,
-    text_a: str,
-    text_b: str,
-) -> tuple[str, str] | None:
-    """Parse ``PrefixA / PrefixB - roleA / roleB`` valve-style captions."""
+def _names_from_dashed_caption(caption: str) -> tuple[str, str] | None:
+    """Parse ``Head - roleA / roleB`` into ``Head - roleA`` / ``Head - roleB``."""
     if " - " not in caption:
         return None
     head, tail = caption.split(" - ", 1)
-    if " / " not in tail:
+    head = head.strip()
+    if not head or " / " not in tail:
         return None
     role_left, role_right = (part.strip() for part in tail.split(" / ", 1))
     if not role_left or not role_right:
         return None
-    if text_a and text_b:
-        return (f"{text_a} {role_left}", f"{text_b} {role_right}")
-    if " / " in head:
-        prefix_left, prefix_right = (part.strip() for part in head.split(" / ", 1))
-        if prefix_left and prefix_right:
-            return (f"{prefix_left} — {role_left}", f"{prefix_right} — {role_right}")
-    return (role_left, role_right)
+    return (f"{head} - {role_left}", f"{head} - {role_right}")
 
 
 def _qualify_short_half(left: str, right: str) -> str:
@@ -247,7 +238,31 @@ def parse_info_row(
     """
     parts = parse_info_display(value)
     names = part_names(caption=caption, text_a=text_a, text_b=text_b, n_parts=len(parts))
+    if len(parts) == 2:
+        names = _refine_mixed_dual_names(caption, names, parts)
     return tuple(part.model_copy(update={"name": names[i]}) for i, part in enumerate(parts))
+
+
+def _refine_mixed_dual_names(
+    caption: str,
+    names: tuple[str, ...],
+    parts: tuple[InfoValuePart, ...],
+) -> tuple[str, ...]:
+    """Replace ``Caption (1)/(2)`` when one side is text/binary/valve."""
+    if len(parts) != 2 or len(names) != 2:
+        return names
+    base = caption.strip() or "Info"
+    if names != (f"{base} (1)", f"{base} (2)"):
+        return names
+    numeric = {InfoValueKind.NUMBER, InfoValueKind.MISSING}
+    left, right = parts[0], parts[1]
+    if left.kind in numeric and right.kind in numeric:
+        return names
+    if left.kind not in numeric and right.kind not in numeric:
+        return (left.raw or base, right.raw or base)
+    left_name = base if left.kind in numeric else (left.raw or base)
+    right_name = base if right.kind in numeric else (right.raw or base)
+    return (left_name, right_name)
 
 
 def _single_name(caption: str, text_a: str, text_b: str) -> str:

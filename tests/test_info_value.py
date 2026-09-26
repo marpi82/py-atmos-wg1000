@@ -11,6 +11,8 @@ from pyatmos_wg1000.protocol.data import (
 )
 from pyatmos_wg1000.protocol.info_value import (
     InfoValueKind,
+    InfoValuePart,
+    _refine_mixed_dual_names,
     parse_info_display,
     parse_info_row,
     parse_part,
@@ -126,32 +128,31 @@ def test_part_names_qualify_short_requirement_half() -> None:
 
 
 def test_part_names_dashed_valve_caption() -> None:
-    """``A / B - position / move`` uses roles, preferably with TextA/TextB codes."""
+    """Dashed captions keep the full head; TextA/TextB terminal codes are ignored."""
     assert part_names(
-        caption="Siłow. MK2O / MK2Z - pozycja / ruch",
-        text_a="MK2A",
-        text_b="MK2B",
+        caption="Siłow. RLA3O / RLA3Z - pozycja / ruch",
+        text_a="VA4",
+        text_b="VA3",
         n_parts=2,
-    ) == ("MK2A pozycja", "MK2B ruch")
+    ) == ("Siłow. RLA3O / RLA3Z - pozycja", "Siłow. RLA3O / RLA3Z - ruch")
     assert part_names(
-        caption="Siłow. MK2O / MK2Z - pozycja / ruch",
+        caption="Mieszana temp. VF1 - aktualna / wymag.",
         text_a="",
         text_b="",
         n_parts=2,
-    ) == ("Siłow. MK2O — pozycja", "MK2Z — ruch")
+    ) == ("Mieszana temp. VF1 - aktualna", "Mieszana temp. VF1 - wymag.")
+    assert part_names(
+        caption="Temp. zewnętrz. AF - min / maks",
+        text_a="AF",
+        text_b="",
+        n_parts=2,
+    ) == ("Temp. zewnętrz. AF - min", "Temp. zewnętrz. AF - maks")
     assert part_names(
         caption="Servo - pozycja / ruch",
         text_a="",
         text_b="",
         n_parts=2,
-    ) == ("pozycja", "ruch")
-    # Head slash with an empty prefix falls through to bare roles.
-    assert part_names(
-        caption=" / MK2Z - pozycja / ruch",
-        text_a="",
-        text_b="",
-        n_parts=2,
-    ) == ("pozycja", "ruch")
+    ) == ("Servo - pozycja", "Servo - ruch")
     # Dash without a dual role in the tail falls through.
     assert part_names(
         caption="Room - sensor",
@@ -182,6 +183,56 @@ def test_named_row_parse() -> None:
     assert parts[0].unit_token == "%"
     assert parts[1].name == "move"
     assert parts[1].valve == "stop"
+    single = parse_info_row(value="25,9 °C", caption="Temp. zewnętrz. AF")
+    assert len(single) == 1
+    assert single[0].name == "Temp. zewnętrz. AF"
+
+
+def test_mixed_dual_row_uses_caption_and_text_token() -> None:
+    """Number + text without a dual caption becomes caption + raw text."""
+    parts = parse_info_row(
+        value="18,9 °C / Tryb letni",
+        caption="Średnia temp. zewnętrz.",
+    )
+    assert parts[0].name == "Średnia temp. zewnętrz."
+    assert parts[0].kind is InfoValueKind.NUMBER
+    assert parts[1].name == "Tryb letni"
+    assert parts[1].kind is InfoValueKind.TEXT
+
+
+def test_auto_comfort_paren_splits_without_space() -> None:
+    """``Auto(comfort)`` splits into mode selection + effective mode."""
+    assert split_display("Auto(comfort)") == ["Auto", "comfort"]
+    parts = parse_info_row(value="Auto(comfort)", caption="Tryb")
+    assert parts[0].name == "Auto"
+    assert parts[1].name == "comfort"
+    spaced = parse_info_row(value="Auto (comfort)", caption="Tryb")
+    assert spaced[0].name == "Auto"
+    assert spaced[1].name == "comfort"
+
+
+def test_mixed_dual_keeps_indexed_names_for_two_numbers() -> None:
+    """Two numeric halves keep ``Caption (1)/(2)`` when the caption is singular."""
+    parts = parse_info_row(value="18,9 °C / 20,0 °C", caption="Pair")
+    assert parts[0].name == "Pair (1)"
+    assert parts[1].name == "Pair (2)"
+
+
+def test_mixed_dual_text_then_number() -> None:
+    """Text on the left keeps its raw token; the number side uses the caption."""
+    parts = parse_info_row(value="Tryb letni / 18,9 °C", caption="Outdoor")
+    assert parts[0].name == "Tryb letni"
+    assert parts[1].name == "Outdoor"
+
+
+def test_refine_mixed_dual_names_guards() -> None:
+    """Defensive length and empty-raw edges stay stable."""
+    empty = ()
+    assert _refine_mixed_dual_names("X", ("a",), empty) == ("a",)
+    num = InfoValuePart(kind=InfoValueKind.NUMBER, raw="1", number=1.0)
+    text = InfoValuePart(kind=InfoValueKind.TEXT, raw="", text="")
+    assert _refine_mixed_dual_names("", ("Info (1)", "Info (2)"), (num, text)) == ("Info", "Info")
+    assert _refine_mixed_dual_names("M", ("M (1)", "M (2)"), (text, text)) == ("M", "M")
 
 
 def test_date_and_text_parts() -> None:
