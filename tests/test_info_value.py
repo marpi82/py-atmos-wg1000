@@ -200,15 +200,45 @@ def test_mixed_dual_row_uses_caption_and_text_token() -> None:
     assert parts[1].kind is InfoValueKind.TEXT
 
 
-def test_auto_comfort_paren_splits_without_space() -> None:
-    """``Auto(comfort)`` splits into mode selection + effective mode."""
+def test_auto_comfort_paren_names_caption_and_effect() -> None:
+    """Mode pairs keep caption on the selection and the inner token on the effect."""
     assert split_display("Auto(comfort)") == ["Auto", "comfort"]
     parts = parse_info_row(value="Auto(comfort)", caption="Tryb")
-    assert parts[0].name == "Auto"
+    assert parts[0].name == "Tryb"
+    assert parts[0].raw == "Auto"
     assert parts[1].name == "comfort"
-    spaced = parse_info_row(value="Auto (comfort)", caption="Tryb")
-    assert spaced[0].name == "Auto"
-    assert spaced[1].name == "comfort"
+    assert parts[1].raw == "comfort"
+    spaced = parse_info_row(value="Auto (Komfort)", caption="Tryb")
+    assert spaced[0].name == "Tryb"
+    assert spaced[0].raw == "Auto"
+    assert spaced[1].name == "Komfort"
+    assert spaced[1].raw == "Komfort"
+
+
+def test_bare_mode_expands_to_selection_and_effect() -> None:
+    """Bare regime values under a short caption become two identical mode parts."""
+    parts = parse_info_row(value="Standby", caption="Tryb")
+    assert len(parts) == 2
+    assert parts[0].name == "Tryb"
+    assert parts[0].raw == "Standby"
+    assert parts[1].name == "Standby"
+    assert parts[1].raw == "Standby"
+    comfort = parse_info_row(value="Komfort", caption="Tryb")
+    assert comfort[0].name == "Tryb"
+    assert comfort[1].name == "Komfort"
+
+
+def test_binary_plus_number_keeps_caption_names() -> None:
+    """``OFF / 6 min`` must not name the binary entity ``OFF``."""
+    parts = parse_info_row(
+        value="OFF / 6 min",
+        caption="Pompa obiegowa ZKP",
+        text_a="VA2",
+    )
+    assert parts[0].name == "Pompa obiegowa ZKP"
+    assert parts[0].kind is InfoValueKind.BINARY
+    assert parts[1].name == "Pompa obiegowa ZKP (2)"
+    assert parts[1].kind is InfoValueKind.NUMBER
 
 
 def test_mixed_dual_keeps_indexed_names_for_two_numbers() -> None:
@@ -233,6 +263,36 @@ def test_refine_mixed_dual_names_guards() -> None:
     text = InfoValuePart(kind=InfoValueKind.TEXT, raw="", text="")
     assert _refine_mixed_dual_names("", ("Info (1)", "Info (2)"), (num, text)) == ("Info", "Info")
     assert _refine_mixed_dual_names("M", ("M (1)", "M (2)"), (text, text)) == ("M", "M")
+    # Non-mode dual text with an existing slash caption keeps those names.
+    assert _refine_mixed_dual_names(
+        "left / right",
+        ("left", "right"),
+        (
+            InfoValuePart(kind=InfoValueKind.TEXT, raw="A", text="A"),
+            InfoValuePart(kind=InfoValueKind.TEXT, raw="B", text="B"),
+        ),
+    ) == ("left", "right")
+
+
+def test_mode_caption_helpers_skip_non_mode_rows() -> None:
+    """Dashed / multi-word captions and non-text values stay single-part."""
+    assert parse_info_row(value="Standby", caption="Room mode")[0].name == "Room mode"
+    assert len(parse_info_row(value="Standby", caption="A / B")) == 1
+    assert len(parse_info_row(value="OFF", caption="Tryb")) == 1
+    assert len(parse_info_row(value="   ", caption="Tryb")) == 1
+
+
+def test_binary_text_and_swapped_binary_number_names() -> None:
+    """Binary+text and number+binary keep the panel caption on the switch side."""
+    broken = parse_info_row(value="OFF / nie działa", caption="Pompa")
+    assert broken[0].name == "Pompa"
+    assert broken[1].name == "Pompa (2)"
+    swapped = parse_info_row(value="6 min / OFF", caption="Pompa")
+    assert swapped[0].name == "Pompa (1)"
+    assert swapped[1].name == "Pompa"
+    text_off = parse_info_row(value="alarm / OFF", caption="Status")
+    assert text_off[0].name == "Status (1)"
+    assert text_off[1].name == "Status"
 
 
 def test_date_and_text_parts() -> None:
