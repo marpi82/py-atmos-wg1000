@@ -59,7 +59,9 @@ def test_parse_binary_and_valve() -> None:
 
 def test_unit_inheritance_across_slash() -> None:
     """Bare left number inherits the right half unit."""
-    left, right = parse_info_display("5,1 / 26,1 °C")
+    parts = parse_info_display("5,1 / 26,1 °C")
+    assert len(parts) == 2
+    left, right = parts[0], parts[1]
     assert left.number == 5.1
     assert left.unit_token == "°C"
     assert right.number == 26.1
