@@ -53,7 +53,9 @@ def encode_login(username: str, password: str, *, stay: bool = False, edit: bool
     """
     user = _padded(username, _USER_FIELD, "username")
     secret = _padded(password, _PASSWORD_FIELD, "password")
-    digest = hashlib.sha512(user + secret).digest()
+    # WG1000 wire login digests credentials with SHA-512, matching Pages.js.
+    # This is not local password storage; a KDF would break gateway auth.
+    digest = hashlib.sha512(user + secret).digest()  # codeql[py/weak-sensitive-data-hashing]
     action = LoginAction.EDIT if edit else LoginAction.LOGIN
     return bytes((action,)) + user + digest + bytes((1 if stay else 0,))
 

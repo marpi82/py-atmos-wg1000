@@ -23,5 +23,3 @@ napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 html_theme = "furo"
 intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
-templates_path: list[str] = []
-html_static_path: list[str] = []
