@@ -7,6 +7,13 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+## [2026.9.0b5] - 2026-09-26
+
+### Fixed
+
+- `part_names`: qualify abbreviated caption halves (e.g. bare ``wymag.``) and parse
+  ``A / B - roleA / roleB`` valve captions into readable dual names.
+
 ## [2026.9.0b4] - 2026-09-26
 
 ### Added
