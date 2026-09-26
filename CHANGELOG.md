@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`).
 
+## [Unreleased]
+
+## [2026.9.0b4] - 2026-09-26
+
+### Added
+
+- `protocol/info_value.py`: split/classify Info display strings (slash and parenthetical pairs, units, `---` missing, ON/OFF, open/stop/close).
+- `encode_packed_setpoints`, `decode_circuit_general` / `decode_circuit_regime` / `encode_circuit_regime`, `regime_preset_index`.
+- `AtmosClient.write_registers` for homepage `SetPrm` writes.
+
 ## [2026.9.0b3] - 2026-09-26
 
 ### Added
@@ -19,7 +29,7 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 - Build the TLS context in a worker thread and skip loading the system CA store when `verify_tls=False`, so Home Assistant no longer flags blocking `load_default_certs` on connect.
 
-## [Unreleased]
+## [2026.9.0b1] - 2026-09-25
 
 ### Changed
 

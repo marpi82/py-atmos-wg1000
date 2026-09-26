@@ -4,20 +4,35 @@ from __future__ import annotations
 
 import hashlib
 
+import pytest
+
+from pyatmos_wg1000.client import AtmosClient
 from pyatmos_wg1000.errors import ProtocolError
 from pyatmos_wg1000.protocol.catalog import Device, Hod16, Id33, hod16_id
 from pyatmos_wg1000.protocol.enums import Channel, CommandCode, FileOp, ParamAccess, ParamType
 from pyatmos_wg1000.protocol.files import decode_file_chunk, encode_file_ack, encode_file_request
-from pyatmos_wg1000.protocol.frame import decode_client_frame, decode_server_frame, encode_client_frame, encode_server_frame
+from pyatmos_wg1000.protocol.frame import (
+    Command,
+    Frame,
+    decode_client_frame,
+    decode_server_frame,
+    encode_client_frame,
+    encode_server_frame,
+)
 from pyatmos_wg1000.protocol.login import encode_login, parse_login_result
 from pyatmos_wg1000.protocol.params import (
     decode_acd_date,
     decode_acd_temperature,
     decode_acd_time,
+    decode_circuit_general,
+    decode_circuit_regime,
     decode_packed_setpoints,
     decode_param_read,
     decode_param_write_result,
+    encode_circuit_regime,
+    encode_packed_setpoints,
     encode_param_write,
+    regime_preset_index,
 )
 
 # Server frames captured on the LAN gateway. They contain no credentials.
@@ -104,6 +119,46 @@ def test_temperature_time_and_setpoints_from_live_words() -> None:
     pair = decode_packed_setpoints(0x1C801F00)
     assert pair.comfort_c == 1240 / 10 - 64
     assert pair.reduced_c == 1140 / 10 - 64
+    packed = encode_packed_setpoints(pair.comfort_c, pair.reduced_c)
+    round_trip = decode_packed_setpoints(packed)
+    assert round_trip.comfort_c == pair.comfort_c
+    assert round_trip.reduced_c == pair.reduced_c
+
+
+def test_circuit_regime_and_general_round_trip() -> None:
+    """Homepage OBECNE / REZIM bit layouts round-trip."""
+    word = 0x01 | (2 << 1) | (1 << 4)
+    general = decode_circuit_general(word)
+    assert general.active is True
+    assert general.temp_type == 2
+    assert general.humidity is True
+
+    packed = encode_circuit_regime(regime_preset_index("comfort"), week_prog=1, date_time=10)
+    regime = decode_circuit_regime(packed)
+    assert regime.preset == "comfort"
+    assert regime.index == 5
+    assert regime.week_prog == 1
+    assert regime.date_time == 10
+
+    with pytest.raises(ProtocolError, match="regime index"):
+        encode_circuit_regime(16)
+    with pytest.raises(ProtocolError, match="week prog"):
+        encode_circuit_regime(1, week_prog=4)
+    with pytest.raises(ProtocolError, match="date/time"):
+        encode_circuit_regime(1, date_time=0x10000)
+    with pytest.raises(ProtocolError, match="unknown regime"):
+        regime_preset_index("nope")
+
+
+def test_packed_setpoints_use_half_up_like_pages_js() -> None:
+    """Encoder matches JS Math.round half-up, then decoder round-trips."""
+    word = encode_packed_setpoints(21.0, 18.0)
+    pair = decode_packed_setpoints(word)
+    assert pair.comfort_c == 21.0
+    assert pair.reduced_c == 18.0
+    # Exact half raw unit: Python round() would banker's-round, JS Math.round goes up.
+    half = -63.9296875
+    assert encode_packed_setpoints(half, half) == (5 | (5 << 16))
 
 
 def test_file_chunk_header_and_ack() -> None:
@@ -148,3 +203,18 @@ def test_hod16_id_uses_first_acd_by_default() -> None:
     assert hod16_id(Hod16.AF) == 0x11000001
     assert hod16_id(Hod16.AF, device=Device.AC16_2) == 0x21000001
     assert int(Id33.USER1_LANG) == 92
+
+
+async def test_write_registers_uses_param_write_exchange() -> None:
+    """AtmosClient.write_registers decodes the UI write response layout."""
+    payload = bytes((ParamAccess.WRITE, 1)) + (5).to_bytes(4, "little") + bytes((0x10,)) + (5).to_bytes(4, "little")
+    client = AtmosClient("127.0.0.1")
+
+    async def _exchange(commands: object) -> Frame:
+        del commands
+        return Frame(version=1, commands=(Command(channel=3, code=int(CommandCode.PARAM), payload=payload),))
+
+    client.exchange = _exchange  # type: ignore[method-assign]
+    results = await client.write_registers([(5, 5)])
+    assert results[0].register_id == 5
+    assert results[0].edit_accepted is True

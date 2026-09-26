@@ -26,7 +26,14 @@ from pyatmos_wg1000.protocol.enums import Channel, CommandCode, DataKind, LoginA
 from pyatmos_wg1000.protocol.files import decode_file_chunk, encode_file_ack, encode_file_request
 from pyatmos_wg1000.protocol.frame import SESSION_ID_LENGTH, Command, Frame, decode_server_frame, encode_client_frame
 from pyatmos_wg1000.protocol.login import LoginResult, encode_login, parse_login_result
-from pyatmos_wg1000.protocol.params import ParamRecord, decode_param_read, encode_param_read
+from pyatmos_wg1000.protocol.params import (
+    ParamRecord,
+    WriteResult,
+    decode_param_read,
+    decode_param_write_result,
+    encode_param_read,
+    encode_param_write,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +179,28 @@ class AtmosClient:
         """
         frame = await self.exchange([Command(channel=channel, code=CommandCode.PARAM, payload=encode_param_read(register_ids))])
         return decode_param_read(_only_payload(frame, CommandCode.PARAM))
+
+    async def write_registers(
+        self,
+        pairs: Sequence[tuple[int, int]],
+        *,
+        channel: Channel = Channel.PAGE_PARAM,
+    ) -> tuple[WriteResult, ...]:
+        """Write register values the way the homepage ``SetPrm`` path does.
+
+        Args:
+            pairs: ``(register_id, value)`` tuples.
+            channel: ``PAGE_PARAM`` after login (same as reads).
+
+        Returns:
+            One :class:`WriteResult` per written id.
+
+        Note:
+            The write response layout follows ``Pages.js``; a live capture has
+            not been checked in yet.
+        """
+        frame = await self.exchange([Command(channel=channel, code=CommandCode.PARAM, payload=encode_param_write(pairs))])
+        return decode_param_write_result(_only_payload(frame, CommandCode.PARAM))
 
     async def fetch_own_text(self, ac16: int = 0) -> tuple[str, ...]:
         """Download custom panel names (OwnText) for one AC16.
