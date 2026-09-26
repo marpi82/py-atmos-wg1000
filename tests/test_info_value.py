@@ -142,6 +142,13 @@ def test_part_names_dashed_valve_caption() -> None:
         text_b="",
         n_parts=2,
     ) == ("pozycja", "ruch")
+    # Head slash with an empty prefix falls through to bare roles.
+    assert part_names(
+        caption=" / MK2Z - pozycja / ruch",
+        text_a="",
+        text_b="",
+        n_parts=2,
+    ) == ("pozycja", "ruch")
     # Dash without a dual role in the tail falls through.
     assert part_names(
         caption="Room - sensor",
