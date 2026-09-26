@@ -29,7 +29,7 @@ Pre-commit hooks exist; **pre-push** runs pytest with an **80% project** floor p
 
 ## Architecture in one paragraph
 
-One TLS WebSocket (`wss://<host>/api/wss`) carries a binary framing protocol (version, length, optional 32-byte session id, commands, CRC). Configuration loads language tables (`Lang.json`, `texty_brana.json`) via :class:`pyatmos_wg1000.i18n.LanguageCatalog`. Runtime keeps a light poller (:class:`pyatmos_wg1000.feed.AtmosFeed`) that asks for fixed register ids and publishes :class:`pyatmos_wg1000.feed.RegisterUpdate` when a raw word changes. The gateway does not push sensor values on its own. Public surface today: `AtmosClient`, `AtmosFeed`, `LanguageCatalog`, `ValueStore`.
+One TLS WebSocket (`wss://<host>/api/wss`) carries a binary framing protocol (version, length, optional 32-byte session id, commands, CRC). Configuration loads language tables (`Lang.json`, `texty_brana.json`) via :class:`pyatmos_wg1000.i18n.LanguageCatalog`. Runtime can poll fixed register ids (:class:`pyatmos_wg1000.feed.AtmosFeed`) or the Info page dump (:class:`pyatmos_wg1000.feed.InfoFeed` / :meth:`AtmosClient.fetch_info`). The gateway does not push sensor values on its own. Public surface: `AtmosClient`, `AtmosFeed`, `InfoFeed`, `LanguageCatalog`, `ValueStore`.
 
 ## Non-negotiable conventions
 
