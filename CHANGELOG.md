@@ -7,6 +7,8 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+## [2026.10.2] - 2026-10-15
+
 ### Added
 
 - Helpers for the end time/date of timed regimes (visit, absence, holiday):
