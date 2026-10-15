@@ -8,7 +8,7 @@ configuration time, and a light value feed at runtime.
 **PyPI name:** ``py-atmos-wg1000`` (PyPI rejected ``py-atmos`` / ``pyatmos`` as too similar to the existing ``pyatmos`` project).
 Import as ``import pyatmos_wg1000``.
 
-**Status:** stable (``2026.10.1``). The frame codec, language tables, Info dump,
+**Status:** stable (``2026.10.2``). The frame codec, language tables, Info dump,
 register poller, and stock ``Pages.js`` poll-interval parser are in place.
 Writes to the boiler are encoded.
 

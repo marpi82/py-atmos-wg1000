@@ -31,8 +31,10 @@ class ParamRecord(BaseModel):
 class WriteResult(BaseModel):
     """One register in a parameter write response.
 
-    The layout comes from ``Pages.js`` (``GetMsg`` / ``RefreshPRM``),
-    checked against a real write.
+    Field order follows ``Pages.js`` (``GetMsg`` / ``RefreshPRM``). One
+    accepted write, status ``0x1C``, matched that order. Bits 2 and 3 of
+    that status were set and are not decoded. A refused write (status bit
+    0) has not been captured.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -43,7 +45,11 @@ class WriteResult(BaseModel):
 
     @property
     def rejected(self) -> bool:
-        """Return whether the gateway refused the write (status bit 0)."""
+        """Return whether status bit 0 is set.
+
+        ``Pages.js`` treats that bit as a refused write. No refused
+        response is in the captured fixture.
+        """
         return bool(self.status & 0x01)
 
     @property
@@ -331,14 +337,21 @@ class CircuitRegime(BaseModel):
 
     @property
     def end_time(self) -> time | None:
-        """End time for absence/visit."""
+        """Absence or visit end time, or ``None`` for other modes.
+
+        ``00:00`` is a real end. Callers that want no end reject it before writing.
+        """
         if self.index not in (REGIME_ABSENCE, REGIME_VISIT):
             return None
         return decode_regime_end_time(self.date_time)
 
     @property
     def end_date(self) -> date | None:
-        """End date for holiday."""
+        """Holiday end date, or ``None`` for other modes.
+
+        Day 0 is 2016-01-01. The day count follows ``Pages.js`` and has not
+        been read back from a gateway.
+        """
         if self.index != REGIME_HOLIDAY:
             return None
         return decode_regime_end_date(self.date_time)
@@ -367,7 +380,7 @@ _REGIME_PRESETS: dict[int, str] = {
 
 _PRESET_TO_INDEX = {name: index for index, name in _REGIME_PRESETS.items()}
 
-# Holiday end date is stored as days since this date.
+# Holiday end dates are whole days since this day (Pages.js). Day 0 is this date.
 REGIME_DATE_EPOCH = date(2016, 1, 1)
 
 
@@ -398,7 +411,8 @@ def encode_circuit_regime(
     Args:
         index: ``Regime_menu`` index (0..7 for known modes).
         week_prog: Weekly program A/B/C for auto/summer (0..2).
-        date_time: End date (holiday) or end time (absence/visit).
+        date_time: Holiday end as days since 2016-01-01, or an absence/visit
+            end as BCD ``HHMM``. ``0`` is a real end (that epoch day, or 00:00).
 
     Returns:
         32-bit value for ``SetPrm([O*_REZIM], …)``.
@@ -421,7 +435,11 @@ def encode_regime_end_time(value: time) -> int:
 
 
 def decode_regime_end_time(date_time: int) -> time | None:
-    """Decode an absence/visit end time. ``None`` if it isn't a valid BCD time."""
+    """Decode an absence or visit end time.
+
+    ``0`` is 00:00, a real end. Returns ``None`` when the half-words are
+    not a BCD time.
+    """
     hour = _from_bcd((date_time >> 8) & 0xFF)
     minute = _from_bcd(date_time & 0xFF)
     if hour is None or minute is None or hour > 23 or minute > 59:
@@ -430,7 +448,11 @@ def decode_regime_end_time(date_time: int) -> time | None:
 
 
 def encode_regime_end_date(value: date) -> int:
-    """Encode a holiday end date as days since :data:`REGIME_DATE_EPOCH`."""
+    """Encode a holiday end as days since :data:`REGIME_DATE_EPOCH`.
+
+    The day count is the ``Pages.js`` formula. No holiday end has been read
+    back from a gateway. Day 0 is 2016-01-01.
+    """
     days = (value - REGIME_DATE_EPOCH).days
     if not 0 <= days <= 0xFFFF:
         raise ProtocolError(f"regime end date out of range: {value.isoformat()}")
@@ -438,7 +460,10 @@ def encode_regime_end_date(value: date) -> int:
 
 
 def decode_regime_end_date(date_time: int) -> date:
-    """Decode a holiday end date."""
+    """Decode a holiday end date.
+
+    ``0`` is :data:`REGIME_DATE_EPOCH`, a real date.
+    """
     return REGIME_DATE_EPOCH + timedelta(days=date_time & 0xFFFF)
 
 

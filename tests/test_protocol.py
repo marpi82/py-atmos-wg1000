@@ -177,6 +177,7 @@ def test_regime_end_time_is_bcd() -> None:
     assert absence.preset == "absence"
     assert absence.end_time == time(7, 30)
 
+    assert decode_regime_end_time(0) == time(0, 0)
     assert decode_regime_end_time(0x2359) == time(23, 59)
     assert decode_regime_end_time(0x2A00) is None
     assert decode_regime_end_time(0x2400) is None
@@ -184,10 +185,15 @@ def test_regime_end_time_is_bcd() -> None:
 
 
 def test_live_regime_write_result() -> None:
-    """Response to a real O1_REZIM write."""
+    """One accepted O1_REZIM write uses status 0x1C.
+
+    Bits 2 and 3 are set on that capture and stay undecoded. Bit 0 (refused)
+    was clear. A refused write is not in this fixture.
+    """
     payload = bytes((ParamAccess.WRITE, 1)) + (285212683).to_bytes(4, "little") + bytes((0x1C,)) + (0x8D002).to_bytes(4, "little")
     (result,) = decode_param_write_result(payload)
     assert result.register_id == hod16_id(Hod16.O1_REZIM)
+    assert result.status == 0x1C
     assert result.value == 0x8D002
     assert result.rejected is False
     assert result.edit_accepted is True
@@ -197,6 +203,7 @@ def test_holiday_end_date_counts_days_from_2016() -> None:
     """Holiday end is days since 2016-01-01."""
     assert date(2016, 1, 1) == REGIME_DATE_EPOCH
     assert encode_regime_end_date(date(2016, 1, 1)) == 0
+    assert decode_regime_end_date(0) == REGIME_DATE_EPOCH
     assert encode_regime_end_date(date(2026, 10, 20)) == 3945
     assert decode_regime_end_date(3945) == date(2026, 10, 20)
 

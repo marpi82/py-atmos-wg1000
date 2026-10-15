@@ -7,12 +7,18 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+## [2026.10.2] - 2026-10-15
+
 ### Added
 
 - Helpers for the end time/date of timed regimes (visit, absence, holiday):
   ``encode_regime_end_time``, ``decode_regime_end_time``,
   ``encode_regime_end_date``, ``decode_regime_end_date``, ``REGIME_DATE_EPOCH``,
-  and ``CircuitRegime.end_time`` / ``end_date``.
+  and ``CircuitRegime.end_time`` / ``end_date``. A zero payload is a real end
+  (``00:00``, or ``2016-01-01`` for holiday). Holiday day counts follow
+  ``Pages.js`` and have not been read back from a gateway.
+- Write-response layout matches one accepted write (status ``0x1C``). Bits 2
+  and 3 of that status are not decoded, and a refused write has not been captured.
 
 ## [2026.10.1] - 2026-10-04
 
