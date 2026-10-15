@@ -196,8 +196,7 @@ class AtmosClient:
             One :class:`WriteResult` per written id.
 
         Note:
-            The write response layout follows ``Pages.js``; a live capture has
-            not been checked in yet.
+            Response layout checked against a real write.
         """
         frame = await self.exchange([Command(channel=channel, code=CommandCode.PARAM, payload=encode_param_write(pairs))])
         return decode_param_write_result(_only_payload(frame, CommandCode.PARAM))

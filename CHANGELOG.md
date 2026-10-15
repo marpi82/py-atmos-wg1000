@@ -7,6 +7,13 @@ and this project uses [Calendar Versioning](https://calver.org/) (`YYYY.M.PATCH`
 
 ## [Unreleased]
 
+### Added
+
+- Helpers for the end time/date of timed regimes (visit, absence, holiday):
+  ``encode_regime_end_time``, ``decode_regime_end_time``,
+  ``encode_regime_end_date``, ``decode_regime_end_date``, ``REGIME_DATE_EPOCH``,
+  and ``CircuitRegime.end_time`` / ``end_date``.
+
 ## [2026.10.1] - 2026-10-04
 
 First stable release.

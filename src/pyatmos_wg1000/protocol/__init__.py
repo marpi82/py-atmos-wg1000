@@ -49,6 +49,7 @@ from pyatmos_wg1000.protocol.info_value import (
 from pyatmos_wg1000.protocol.login import LoginResult, encode_login, parse_login_result
 from pyatmos_wg1000.protocol.pages import INFO_PAGE_POLL_INTERVAL, parse_pages_js_hod16_intervals
 from pyatmos_wg1000.protocol.params import (
+    REGIME_DATE_EPOCH,
     AcdDate,
     AcdTime,
     CircuitGeneral,
@@ -65,10 +66,14 @@ from pyatmos_wg1000.protocol.params import (
     decode_packed_setpoints,
     decode_param_read,
     decode_param_write_result,
+    decode_regime_end_date,
+    decode_regime_end_time,
     encode_circuit_regime,
     encode_packed_setpoints,
     encode_param_read,
     encode_param_write,
+    encode_regime_end_date,
+    encode_regime_end_time,
     regime_preset_index,
 )
 
@@ -77,6 +82,7 @@ __all__ = [
     "AC16_OWN_TEXT_OFFSET",
     "AC16_TEXT_INDEX",
     "INFO_PAGE_POLL_INTERVAL",
+    "REGIME_DATE_EPOCH",
     "AcdDate",
     "AcdTime",
     "Channel",
@@ -121,6 +127,8 @@ __all__ = [
     "decode_packed_setpoints",
     "decode_param_read",
     "decode_param_write_result",
+    "decode_regime_end_date",
+    "decode_regime_end_time",
     "decode_server_frame",
     "encode_circuit_regime",
     "encode_client_frame",
@@ -131,6 +139,8 @@ __all__ = [
     "encode_packed_setpoints",
     "encode_param_read",
     "encode_param_write",
+    "encode_regime_end_date",
+    "encode_regime_end_time",
     "encode_server_frame",
     "expand_info_value",
     "expand_info_value_with",

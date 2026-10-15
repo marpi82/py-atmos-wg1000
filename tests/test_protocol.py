@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import date, time, timedelta
 
 import pytest
 
@@ -21,6 +22,7 @@ from pyatmos_wg1000.protocol.frame import (
 )
 from pyatmos_wg1000.protocol.login import encode_login, parse_login_result
 from pyatmos_wg1000.protocol.params import (
+    REGIME_DATE_EPOCH,
     decode_acd_date,
     decode_acd_temperature,
     decode_acd_time,
@@ -29,9 +31,13 @@ from pyatmos_wg1000.protocol.params import (
     decode_packed_setpoints,
     decode_param_read,
     decode_param_write_result,
+    decode_regime_end_date,
+    decode_regime_end_time,
     encode_circuit_regime,
     encode_packed_setpoints,
     encode_param_write,
+    encode_regime_end_date,
+    encode_regime_end_time,
     regime_preset_index,
 )
 
@@ -148,6 +154,68 @@ def test_circuit_regime_and_general_round_trip() -> None:
         encode_circuit_regime(1, date_time=0x10000)
     with pytest.raises(ProtocolError, match="unknown regime"):
         regime_preset_index("nope")
+
+
+def test_regime_end_time_is_bcd() -> None:
+    """Visit/absence end time is BCD HH:MM."""
+    assert encode_regime_end_time(time(22, 0)) == 0x2200
+    assert encode_regime_end_time(time(7, 35, 59)) == 0x0735
+
+    visit = encode_circuit_regime(regime_preset_index("visit"), date_time=encode_regime_end_time(time(22, 0)))
+    assert visit == 0x88002
+    regime = decode_circuit_regime(visit)
+    assert regime.preset == "visit"
+    assert regime.end_time == time(22, 0)
+    assert regime.end_date is None
+
+    # Real value after setting "visit until 23:55" in the web UI.
+    live = decode_circuit_regime(0x8D542)
+    assert (live.preset, live.week_prog, live.end_time) == ("visit", 0, time(23, 55))
+    assert encode_circuit_regime(regime_preset_index("visit"), date_time=encode_regime_end_time(time(23, 55))) == 0x8D542
+
+    absence = decode_circuit_regime(0x1CC01)
+    assert absence.preset == "absence"
+    assert absence.end_time == time(7, 30)
+
+    assert decode_regime_end_time(0x2359) == time(23, 59)
+    assert decode_regime_end_time(0x2A00) is None
+    assert decode_regime_end_time(0x2400) is None
+    assert decode_regime_end_time(0x2160) is None
+
+
+def test_live_regime_write_result() -> None:
+    """Response to a real O1_REZIM write."""
+    payload = bytes((ParamAccess.WRITE, 1)) + (285212683).to_bytes(4, "little") + bytes((0x1C,)) + (0x8D002).to_bytes(4, "little")
+    (result,) = decode_param_write_result(payload)
+    assert result.register_id == hod16_id(Hod16.O1_REZIM)
+    assert result.value == 0x8D002
+    assert result.rejected is False
+    assert result.edit_accepted is True
+
+
+def test_holiday_end_date_counts_days_from_2016() -> None:
+    """Holiday end is days since 2016-01-01."""
+    assert date(2016, 1, 1) == REGIME_DATE_EPOCH
+    assert encode_regime_end_date(date(2016, 1, 1)) == 0
+    assert encode_regime_end_date(date(2026, 10, 20)) == 3945
+    assert decode_regime_end_date(3945) == date(2026, 10, 20)
+
+    holiday = decode_circuit_regime(encode_circuit_regime(regime_preset_index("holiday"), date_time=3945))
+    assert holiday.end_date == date(2026, 10, 20)
+    assert holiday.end_time is None
+
+    with pytest.raises(ProtocolError, match="end date"):
+        encode_regime_end_date(date(2015, 12, 31))
+    with pytest.raises(ProtocolError, match="end date"):
+        encode_regime_end_date(REGIME_DATE_EPOCH + timedelta(days=0x10000))
+
+
+def test_permanent_regimes_have_no_end() -> None:
+    """Auto has no end time or date."""
+    auto = decode_circuit_regime(encode_circuit_regime(regime_preset_index("auto"), week_prog=2))
+    assert auto.week_prog == 2
+    assert auto.end_time is None
+    assert auto.end_date is None
 
 
 def test_packed_setpoints_use_half_up_like_pages_js() -> None:
