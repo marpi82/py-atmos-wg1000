@@ -196,7 +196,9 @@ class AtmosClient:
             One :class:`WriteResult` per written id.
 
         Note:
-            Response layout checked against a real write.
+            One accepted write matched this layout (status ``0x1C``). Bits 2
+            and 3 of that status are not decoded, and a refused write has
+            not been captured.
         """
         frame = await self.exchange([Command(channel=channel, code=CommandCode.PARAM, payload=encode_param_write(pairs))])
         return decode_param_write_result(_only_payload(frame, CommandCode.PARAM))
