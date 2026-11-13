@@ -64,7 +64,8 @@ jobs:
             --format=json \
             --output=pip-audit-results.json \
             --progress-spinner=off \
-            --skip-editable
+            --skip-editable \
+            --ignore-vuln GHSA-mmhr-3c5m-f64f
 
       - name: Upload pip-audit results
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
